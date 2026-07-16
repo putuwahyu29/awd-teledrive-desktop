@@ -1,7 +1,7 @@
-# awd-teledrive-desktop 💻☁️🚀
+# Awd TeleDrive Desktop 💻☁️🚀
 
 <p align="center">
-  <img src="logo-drive.png" width="130" height="130" alt="Logo awd-teledrive-desktop" onerror="this.src='icon.webp'">
+  <img src="logo-drive.png" width="130" height="130" alt="Logo Awd TeleDrive Desktop" onerror="this.src='icon.webp'">
 </p>
 
 <p align="center">
@@ -14,15 +14,15 @@
   <img src="https://img.shields.io/badge/Framework-Wails%20v2-red?style=flat-square&logo=wails&logoColor=white" alt="Badge Wails">
 </p>
 
-**awd-teledrive-desktop** adalah aplikasi desktop lintas platform berkinerja tinggi yang kaya fitur untuk mengubah akun Telegram Anda menjadi penyimpanan cloud pribadi tak terbatas yang aman. Dibangun dengan framework modern **Wails (Go)** dan **React/Vite (TypeScript)**, awd-teledrive-desktop menyajikan antarmuka desktop native yang menawan serta alur sinkronisasi media dan penanganan berkas latar belakang yang canggih.
+**Awd TeleDrive Desktop** adalah aplikasi desktop lintas platform berkinerja tinggi yang kaya fitur untuk mengubah akun Telegram Anda menjadi penyimpanan cloud pribadi tak terbatas yang aman. Dibangun dengan framework modern **Wails (Go)** dan **React/Vite (TypeScript)**, awd-teledrive-desktop menyajikan antarmuka desktop native yang menawan serta alur sinkronisasi media dan penanganan berkas latar belakang yang canggih.
 
 ---
 
 ## 🌐 Ekosistem Teledrive
 Aplikasi ini merupakan bagian dari ekosistem lintas platform yang dirancang untuk menjadikan Telegram sebagai penyimpanan cloud pribadi Anda:
-*   **📱 [awd-teledrive-android](https://github.com/putuwahyu29/awd-teledrive-android)**: Manajer file dan alat pencadangan Android yang aman.
-*   **💻 [awd-teledrive-desktop](https://github.com/putuwahyu29/awd-teledrive-desktop)**: Klien desktop Wails (Go) + React berkinerja tinggi dengan sinkronisasi dua arah, dekripsi lokal, dan Berbagi Web via Cloudflare.
-*   **📸 [awd-telephoto-android](https://github.com/putuwahyu29/awd-telephoto-android)**: Aplikasi pendamping untuk pencadangan foto/video terenkripsi di sisi klien.
+*   **📱 [Awd TeleDrive Android](https://github.com/putuwahyu29/awd-teledrive-android)**: Manajer file dan alat pencadangan Android yang aman.
+*   **💻 [Awd TeleDrive Desktop](https://github.com/putuwahyu29/awd-teledrive-desktop)**: Klien desktop Wails (Go) + React berkinerja tinggi dengan sinkronisasi dua arah, dekripsi lokal, dan Berbagi Web via Cloudflare.
+*   **📸 [Awd TelePhoto Android](https://github.com/putuwahyu29/awd-telephoto-android)**: Aplikasi pendamping untuk pencadangan foto/video terenkripsi di sisi klien.
 
 ---
 
@@ -87,7 +87,7 @@ Aplikasi ini merupakan bagian dari ekosistem lintas platform yang dirancang untu
 
 ## 📊 Matriks Perbandingan Fitur
 
-| Fitur | 📱 awd-teledrive-android | 💻 awd-teledrive-desktop | 📸 awd-telephoto-android |
+| Fitur | 📱 Awd TeleDrive Android | 💻 Awd TeleDrive Desktop | 📸 Awd TelePhoto Android |
 | :--- | :---: | :---: | :---: |
 | **Penyimpanan Cloud Tanpa Batas** | Ya (Hingga 2GB per file) | Ya (Ukuran file tidak terbatas) | Ya (Foto & Video) |
 | **Manajer File & Folder** | Ya | Ya | Tampilan Galeri saja |
@@ -117,12 +117,12 @@ Semua file konfigurasi, data sesi, dan cache media disimpan secara lokal pada di
 Untuk menggunakan aplikasi desktop yang telah di-build, cukup klik ganda file executable `teledrive.exe`. Tidak diperlukan instalasi driver tambahan.
 
 ### Cara Mendapatkan Kredensial API Telegram
-awd-teledrive-desktop membutuhkan API ID & API Hash Anda sendiri untuk terhubung ke server Telegram secara aman. Ikuti langkah mudah berikut (gratis, ~2 menit):
+Awd TeleDrive Desktop membutuhkan API ID & API Hash Anda sendiri untuk terhubung ke server Telegram secara aman. Ikuti langkah mudah berikut (gratis, ~2 menit):
 1. Buka situs [my.telegram.org](https://my.telegram.org/) dan masuk menggunakan nomor Telegram Anda.
 2. Pilih menu **API development tools**.
 3. Isi formulir pembuatan aplikasi baru (Judul dan nama singkat bebas sesuai keinginan).
 4. Salin nilai **App api_id** dan **App api_hash**.
-5. Masukkan nilai tersebut pada tab Pengaturan (Settings) di aplikasi awd-teledrive-desktop.
+5. Masukkan nilai tersebut pada tab Pengaturan (Settings) di aplikasi Awd TeleDrive Desktop.
 
 > [!NOTE]
 > Informasi kredensial API ini disimpan sepenuhnya di PC lokal Anda. Aplikasi ini berkomunikasi langsung ke server resmi Telegram (`dcs.Prod()`) tanpa perantara pihak ketiga.

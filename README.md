@@ -1,7 +1,7 @@
-# awd-teledrive-desktop 💻☁️🚀
+# Awd TeleDrive Desktop 💻☁️🚀
 
 <p align="center">
-  <img src="logo-drive.png" width="130" height="130" alt="awd-teledrive-desktop Logo" onerror="this.src='icon.webp'">
+  <img src="logo-drive.png" width="130" height="130" alt="Awd TeleDrive Desktop Logo" onerror="this.src='icon.webp'">
 </p>
 
 <p align="center">
@@ -14,15 +14,15 @@
   <img src="https://img.shields.io/badge/Framework-Wails%20v2-red?style=flat-square&logo=wails&logoColor=white" alt="Wails Badge">
 </p>
 
-**awd-teledrive-desktop** is a feature-rich, high-performance cross-platform desktop application that turns your Telegram account into an unlimited, secure personal cloud storage drive. Built with the state-of-the-art **Wails (Go)** framework and **React/Vite (TypeScript)**, it provides a native desktop experience with modern aesthetics, advanced media handling, and background synchronization workflows.
+**Awd TeleDrive Desktop** is a feature-rich, high-performance cross-platform desktop application that turns your Telegram account into an unlimited, secure personal cloud storage drive. Built with the state-of-the-art **Wails (Go)** framework and **React/Vite (TypeScript)**, it provides a native desktop experience with modern aesthetics, advanced media handling, and background synchronization workflows.
 
 ---
 
 ## 🌐 Teledrive Ecosystem
 This application is part of a cross-platform ecosystem designed to turn Telegram into your personal unlimited cloud storage:
-*   **📱 [awd-teledrive-android](https://github.com/putuwahyu29/awd-teledrive-android)**: Secure Android file manager and backup tool.
-*   **💻 [awd-teledrive-desktop](https://github.com/putuwahyu29/awd-teledrive-desktop)**: High-performance Wails (Go) + React desktop client with two-way sync, local decryption, and Cloudflare Web Sharing.
-*   **📸 [awd-telephoto-android](https://github.com/putuwahyu29/awd-telephoto-android)**: Companion app for client-side encrypted photo/video backup.
+*   **📱 [Awd TeleDrive Android](https://github.com/putuwahyu29/awd-teledrive-android)**: Secure Android file manager and backup tool.
+*   **💻 [Awd TeleDrive Desktop](https://github.com/putuwahyu29/awd-teledrive-desktop)**: High-performance Wails (Go) + React desktop client with two-way sync, local decryption, and Cloudflare Web Sharing.
+*   **📸 [Awd TelePhoto Android](https://github.com/putuwahyu29/awd-telephoto-android)**: Companion app for client-side encrypted photo/video backup.
 
 ---
 
@@ -87,7 +87,7 @@ This application is part of a cross-platform ecosystem designed to turn Telegram
 
 ## 📊 Feature Comparison Matrix
 
-| Feature | 📱 awd-teledrive-android | 💻 awd-teledrive-desktop | 📸 awd-telephoto-android |
+| Feature | 📱 Awd TeleDrive Android | 💻 Awd TeleDrive Desktop | 📸 Awd TelePhoto Android |
 | :--- | :---: | :---: | :---: |
 | **Unlimited Cloud Storage** | Yes (Up to 2GB per file) | Yes (Any file size) | Yes (Photos & Videos) |
 | **File & Folder Manager** | Yes | Yes | Gallery View only |
@@ -117,7 +117,7 @@ All configuration files, cached data, and session keys are securely stored local
 To run the pre-built desktop application, simply double-click the `teledrive.exe` executable. No additional drivers are needed.
 
 ### How to Obtain Telegram API Credentials
-awd-teledrive-desktop requires your own API credentials to connect with Telegram's servers. This is free and takes less than 2 minutes:
+Awd TeleDrive Desktop requires your own API credentials to connect with Telegram's servers. This is free and takes less than 2 minutes:
 1. Go to [my.telegram.org](https://my.telegram.org/) and log in with your phone number.
 2. Select **API development tools**.
 3. Fill in the form (App title and short name of your choice).
