@@ -1,0 +1,50 @@
+export const applyTheme = (dark: boolean) => {
+  const r = document.documentElement;
+  if (dark) {
+    r.style.setProperty('--md-primary',              '#a8c7fa');
+    r.style.setProperty('--md-on-primary',           '#062e6f');
+    r.style.setProperty('--md-secondary-container',  '#003258');
+    r.style.setProperty('--md-on-secondary-container','#cce5ff');
+    r.style.setProperty('--md-surface',              '#131418');
+    r.style.setProperty('--md-surface-container-lowest','#0d0f13');
+    r.style.setProperty('--md-surface-container-low','#1b1d22');
+    r.style.setProperty('--md-surface-container',    '#1f2126');
+    r.style.setProperty('--md-surface-container-high','#292b31');
+    r.style.setProperty('--md-surface-container-highest','#34363c');
+    r.style.setProperty('--md-surface-variant',      '#40434b');
+    r.style.setProperty('--md-on-surface',           '#e2e2e9');
+    r.style.setProperty('--md-on-surface-variant',   '#c4c6d0');
+    r.style.setProperty('--md-outline',              '#8e9099');
+    r.style.setProperty('--md-outline-variant',      '#44474f');
+    r.style.setProperty('--md-error',                '#f2b8b5');
+    r.style.setProperty('--md-error-container',      '#8c1d18');
+    r.style.setProperty('--md-on-error',             '#601410');
+    r.style.setProperty('--md-on-error-container',   '#f9dedc');
+    r.style.setProperty('--md-inverse-surface',      '#e2e2e9');
+    r.style.setProperty('--md-inverse-on-surface',   '#2f3033');
+    document.body.style.background = '#131418';
+  } else {
+    r.style.setProperty('--md-primary',              '#0b57d0');
+    r.style.setProperty('--md-on-primary',           '#ffffff');
+    r.style.setProperty('--md-secondary-container',  '#d3e3fd');
+    r.style.setProperty('--md-on-secondary-container','#041e49');
+    r.style.setProperty('--md-surface',              '#f0f4f9');
+    r.style.setProperty('--md-surface-container-lowest','#ffffff');
+    r.style.setProperty('--md-surface-container-low','#f8fafe');
+    r.style.setProperty('--md-surface-container',    '#edf2fa');
+    r.style.setProperty('--md-surface-container-high','#e4ecf7');
+    r.style.setProperty('--md-surface-container-highest','#dde6f3');
+    r.style.setProperty('--md-surface-variant',      '#dce5f3');
+    r.style.setProperty('--md-on-surface',           '#1a1c1e');
+    r.style.setProperty('--md-on-surface-variant',   '#44474f');
+    r.style.setProperty('--md-outline',              '#74777f');
+    r.style.setProperty('--md-outline-variant',      '#c4c7cf');
+    r.style.setProperty('--md-error',                '#b3261e');
+    r.style.setProperty('--md-error-container',      '#f9dedc');
+    r.style.setProperty('--md-on-error',             '#ffffff');
+    r.style.setProperty('--md-on-error-container',   '#410e0b');
+    r.style.setProperty('--md-inverse-surface',      '#2f3033');
+    r.style.setProperty('--md-inverse-on-surface',   '#f0f0f3');
+    document.body.style.background = '#f0f4f9';
+  }
+};

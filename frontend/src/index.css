@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600&family=Roboto:wght@400;500&display=swap');
+
+/* ─── MD3 Design Tokens (Light default) ──────────────────────────────────── */
+:root {
+  --primary: #0b57d0;
+  --on-primary: #ffffff;
+  --primary-container: #d3e3fd;
+  --on-primary-container: #041e49;
+  --secondary-container: #c2e7ff;
+  --on-secondary-container: #001d35;
+  --surface: #f0f4f9;
+  --surface-dim: #d8dce1;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f6fb;
+  --surface-container: #edf2fa;
+  --surface-container-high: #e7ecf3;
+  --surface-container-highest: #e1e6ed;
+  --surface-variant: #dce4f0;
+  --on-surface: #1a1c1e;
+  --on-surface-variant: #44474f;
+  --outline: #74777f;
+  --outline-variant: #c4c7cf;
+  --error: #b3261e;
+  --error-container: #f9dedc;
+  --on-error: #ffffff;
+  --on-error-container: #410e0b;
+  --inverse-surface: #2f3033;
+  --inverse-on-surface: #f0f0f3;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+  background: var(--surface);
+  color: var(--on-surface);
+}
+
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1; }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--outline); }

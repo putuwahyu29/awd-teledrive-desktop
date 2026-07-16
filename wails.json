@@ -1,0 +1,16 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Awd TeleDrive",
+  "outputfilename": "awd-teledrive",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "info": {
+    "productVersion": "1.0.0"
+  },
+  "author": {
+    "name": "Awd TeleDrive",
+    "email": "aguswahyu@awd.office.awd.my.id"
+  }
+}
