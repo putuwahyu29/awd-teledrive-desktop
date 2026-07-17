@@ -8,6 +8,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showReset, setShowReset] = useState(false);
+  const lang = localStorage.getItem('lang') || 'id';
 
   useEffect(() => {
     // Show reset button if loading takes more than 4 seconds
@@ -30,7 +31,13 @@ function App() {
     try {
       setIsLoading(true);
       setShowReset(false);
-      await Logout();
+      // Wait for Logout() with a maximum timeout of 3 seconds.
+      // If the backend is deadlocked or sluggish, still force the frontend redirect.
+      await Promise.race([
+        Logout(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Logout backend timeout')), 3000))
+      ]).catch(e => console.warn('Logout warning or timeout:', e));
+
       localStorage.clear();
       setIsAuthenticated(false);
     } catch (e) {
@@ -41,6 +48,10 @@ function App() {
   };
 
   if (isLoading) {
+    const loadingText = lang === 'id' ? 'Menghubungkan ke Telegram...' : 'Connecting to Telegram...';
+    const issueText = lang === 'id' ? 'Koneksi lambat atau sesi bermasalah?' : 'Slow connection or session issue?';
+    const resetBtnText = lang === 'id' ? 'Reset Sesi / Masuk Ulang' : 'Reset Session / Relogin';
+
     return (
       <div style={{
         display:'flex', flexDirection:'column', alignItems:'center',
@@ -57,12 +68,12 @@ function App() {
           borderTopColor:'var(--primary)',
           animation:'spin 0.8s linear infinite'
         }}/>
-        <span style={{ color:'var(--on-surface-variant)', fontSize:14 }}>Loading Awd TeleDrive...</span>
+        <span style={{ color:'var(--on-surface-variant)', fontSize:14 }}>{loadingText}</span>
         
         {showReset && (
           <div style={{ marginTop: 20, display:'flex', flexDirection:'column', alignItems:'center', gap:10, animation:'fadeIn .3s ease' }}>
             <span style={{ fontSize:12, color:'var(--md-error, #b3261e)', textAlign:'center', maxWidth:280 }}>
-              Koneksi lambat atau sesi bermasalah?
+              {issueText}
             </span>
             <button onClick={handleForceReset}
               style={{
@@ -74,7 +85,7 @@ function App() {
               onMouseEnter={e => { e.currentTarget.style.background='rgba(11,87,208,0.08)'; e.currentTarget.style.borderColor='var(--primary)'; }}
               onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.borderColor='var(--outline)'; }}
             >
-              Reset Sesi / Masuk Ulang
+              {resetBtnText}
             </button>
           </div>
         )}

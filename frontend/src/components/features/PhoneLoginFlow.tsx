@@ -63,10 +63,10 @@ export default function PhoneLoginFlow({
   return (
     <>
       <div>
-        <h2 style={{ fontFamily: 'Google Sans, sans-serif', fontSize: 22, fontWeight: 500, color: 'var(--on-surface)', marginBottom: 4 }}>
+        <h2 style={{ fontFamily: 'Google Sans, sans-serif', fontSize: 22, fontWeight: 500, color: 'var(--md-on-surface)', marginBottom: 4 }}>
           {step === 1 ? t.loginPhone : step === 2 ? t.verifyOtp : t.verify2fa}
         </h2>
-        <p style={{ color: 'var(--on-surface-variant)', fontSize: 13.5, margin: 0 }}>
+        <p style={{ color: 'var(--md-on-surface)', opacity: 0.8, fontSize: 13.5, margin: 0 }}>
           {step === 1 && t.descPhone}
           {step === 2 && t.descOtp}
           {step === 3 && t.desc2fa}
@@ -77,12 +77,12 @@ export default function PhoneLoginFlow({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
           {[1, 2, 3].map(s => (
-            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--primary, #0b57d0)' : 'var(--outline-variant, #c4c7cf)', transition: 'background .3s' }} />
+            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? 'var(--md-primary, #0b57d0)' : 'var(--md-outline-variant, #c4c7cf)', transition: 'background .3s' }} />
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           {[1, 2, 3].map(s => (
-            <span key={s} style={{ fontSize: 10, color: s <= step ? 'var(--primary, #0b57d0)' : 'var(--on-surface-variant, #44474f)', fontWeight: s === step ? 600 : 400 }}>
+            <span key={s} style={{ fontSize: 10, color: s <= step ? 'var(--md-primary, #0b57d0)' : 'var(--md-on-surface)', opacity: s === step ? 1 : 0.6, fontWeight: s === step ? 600 : 400 }}>
               {stepLabels[s]}
             </span>
           ))}
@@ -102,29 +102,29 @@ export default function PhoneLoginFlow({
             autofocus
           />
 
-          <div style={{ border: '1.5px solid var(--outline-variant, #c4c7cf)', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ border: '1.5px solid var(--md-outline-variant, #c4c7cf)', borderRadius: 10, overflow: 'hidden' }}>
             <button
               type="button"
               onClick={() => setShowApiConfig(v => !v)}
               style={{
                 width: '100%', padding: '11px 14px',
-                background: showApiConfig ? 'var(--primary-container, #d3e3fd)' : 'transparent',
+                background: showApiConfig ? 'var(--md-primary-container, #d3e3fd)' : 'transparent',
                 border: 'none', cursor: 'pointer',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                color: 'var(--on-surface)', fontSize: 13.5, fontWeight: 500,
+                color: 'var(--md-on-surface)', fontSize: 13.5, fontWeight: 500,
                 fontFamily: 'inherit'
               }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: isApiConfigured ? 'var(--primary, #0b57d0)' : 'var(--on-surface)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, color: isApiConfigured ? 'var(--md-primary, #0b57d0)' : 'var(--md-on-surface)' }}>
                 <Key size={15} />
                 {t.apiConfig}
-                {isApiConfigured && <span style={{ fontSize: 10, background: 'var(--primary, #0b57d0)', color: 'white', padding: '1px 6px', borderRadius: 10, fontWeight: 600 }}>{t.apiSaved}</span>}
+                {isApiConfigured && <span style={{ fontSize: 10, background: 'var(--md-primary, #0b57d0)', color: 'var(--md-on-primary, #ffffff)', padding: '1px 6px', borderRadius: 10, fontWeight: 600 }}>{t.apiSaved}</span>}
               </span>
               {showApiConfig ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
             {showApiConfig && (
-              <div style={{ padding: '14px', borderTop: '1px solid var(--outline-variant, #c4c7cf)', background: 'var(--surface, #f0f4f9)' }}>
+              <div style={{ padding: '14px', borderTop: '1px solid var(--md-outline-variant, #c4c7cf)', background: 'var(--md-surface, #f0f4f9)' }}>
                 <ApiConfigForm
                   apiId={apiId}
                   setApiId={setApiId}
@@ -156,7 +156,7 @@ export default function PhoneLoginFlow({
           <button 
             type="button" 
             onClick={() => { setStep(1); clearErrors(); }}
-            style={{ background: 'none', border: 'none', color: 'var(--primary, #0b57d0)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            style={{ background: 'none', border: 'none', color: 'var(--md-primary, #0b57d0)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             {t.btnBack}
           </button>

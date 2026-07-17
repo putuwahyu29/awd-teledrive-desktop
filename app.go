@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +14,9 @@ import (
 	"github.com/gotd/td/tg"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+//go:embed build/appicon.png
+var appIcon []byte
 
 type App struct {
 	ctx    context.Context
@@ -114,6 +118,7 @@ func (a *App) BeforeClose(ctx context.Context) (prevent bool) {
 		Buttons:       []string{"Ya, Tutup", "Batal"},
 		DefaultButton: "Batal",
 		CancelButton:  "Batal",
+		Icon:          appIcon,
 	})
 	if err != nil {
 		return false

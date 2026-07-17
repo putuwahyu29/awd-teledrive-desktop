@@ -2,30 +2,55 @@
 
 /* ─── MD3 Design Tokens (Light default) ──────────────────────────────────── */
 :root {
-  --primary: #0b57d0;
-  --on-primary: #ffffff;
-  --primary-container: #d3e3fd;
-  --on-primary-container: #041e49;
-  --secondary-container: #c2e7ff;
-  --on-secondary-container: #001d35;
-  --surface: #f0f4f9;
+  --primary: var(--md-primary);
+  --on-primary: var(--md-on-primary);
+  --primary-container: var(--md-primary-container);
+  --on-primary-container: var(--md-on-primary-container);
+  --secondary-container: var(--md-secondary-container);
+  --on-secondary-container: var(--md-on-secondary-container);
+  --surface: var(--md-surface);
   --surface-dim: #d8dce1;
-  --surface-container-lowest: #ffffff;
-  --surface-container-low: #f2f6fb;
-  --surface-container: #edf2fa;
-  --surface-container-high: #e7ecf3;
-  --surface-container-highest: #e1e6ed;
-  --surface-variant: #dce4f0;
-  --on-surface: #1a1c1e;
-  --on-surface-variant: #44474f;
-  --outline: #74777f;
-  --outline-variant: #c4c7cf;
-  --error: #b3261e;
-  --error-container: #f9dedc;
-  --on-error: #ffffff;
-  --on-error-container: #410e0b;
-  --inverse-surface: #2f3033;
-  --inverse-on-surface: #f0f0f3;
+  --surface-container-lowest: var(--md-surface-container-lowest);
+  --surface-container-low: var(--md-surface-container-low);
+  --surface-container: var(--md-surface-container);
+  --surface-container-high: var(--md-surface-container-high);
+  --surface-container-highest: var(--md-surface-container-highest);
+  --surface-variant: var(--md-surface-variant);
+  --on-surface: var(--md-on-surface);
+  --on-surface-variant: var(--md-on-surface-variant);
+  --outline: var(--md-outline);
+  --outline-variant: var(--md-outline-variant);
+  --error: var(--md-error);
+  --error-container: var(--md-error-container);
+  --on-error: var(--md-on-error);
+  --on-error-container: var(--md-on-error-container);
+  --inverse-surface: var(--md-inverse-surface);
+  --inverse-on-surface: var(--md-inverse-on-surface);
+
+  /* Material Design 3 equivalents for light mode */
+  --md-primary: #0b57d0;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #d3e3fd;
+  --md-on-primary-container: #041e49;
+  --md-secondary-container: #d3e3fd;
+  --md-on-secondary-container: #041e49;
+  --md-surface: #f0f4f9;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f8fafe;
+  --md-surface-container: #edf2fa;
+  --md-surface-container-high: #e4ecf7;
+  --md-surface-container-highest: #dde6f3;
+  --md-surface-variant: #dce5f3;
+  --md-on-surface: #1a1c1e;
+  --md-on-surface-variant: #44474f;
+  --md-outline: #74777f;
+  --md-outline-variant: #c4c7cf;
+  --md-error: #b3261e;
+  --md-error-container: #f9dedc;
+  --md-on-error: #ffffff;
+  --md-on-error-container: #410e0b;
+  --md-inverse-surface: #2f3033;
+  --md-inverse-on-surface: #f0f0f3;
 }
 
 /* ─── Reset ──────────────────────────────────────────────────────────────── */

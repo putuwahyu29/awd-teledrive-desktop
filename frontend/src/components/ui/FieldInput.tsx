@@ -39,7 +39,8 @@ export default function FieldInput({
           style={{ 
             fontSize: 12, 
             fontWeight: 500, 
-            color: hasError ? 'var(--md-error)' : focused ? 'var(--md-primary)' : 'var(--md-on-surface-variant)' 
+            color: hasError ? 'var(--md-error)' : focused ? 'var(--md-primary)' : 'var(--md-on-surface)',
+            opacity: focused || hasError ? 1 : 0.75
           }}
         >
           {label}

@@ -49,6 +49,7 @@ VIAddVersionKey "ProductName"     "${INFO_PRODUCTNAME}"
 ManifestDPIAware true
 
 !include "MUI.nsh"
+!include "nsDialogs.nsh"
 
 !define MUI_ICON "..\icon.ico"
 !define MUI_UNICON "..\icon.ico"
@@ -71,6 +72,7 @@ ManifestDPIAware true
 !define MUI_FINISHPAGE_RUN_TEXT "$(RUN_TEXT)"
 !insertmacro MUI_PAGE_FINISH # Finished installation page.
 
+UninstPage custom un.ConfirmPage un.ConfirmPageLeave
 !insertmacro MUI_UNPAGE_INSTFILES # Uinstalling page
 
 !insertmacro MUI_LANGUAGE "Indonesian" # Set Language of the installer to Indonesian
@@ -92,6 +94,10 @@ LangString COMP_SEC_STARTUP ${LANG_INDONESIAN} "Jalankan saat Windows Startup"
 LangString COMP_SEC_STARTUP_DESC ${LANG_INDONESIAN} "Menjalankan aplikasi secara otomatis di latar belakang saat komputer dinyalakan."
 LangString UNINSTALL_OLD_VER_CONFIRM ${LANG_INDONESIAN} "Versi terdahulu dari ${INFO_PRODUCTNAME} terdeteksi di direktori berbeda: $OldInstallDir.$\r$\n$\r$\nApakah Anda ingin mencopot (uninstall) versi lama tersebut secara otomatis sebelum melanjutkan?"
 LangString UNINSTALL_SHORTCUT_TEXT ${LANG_INDONESIAN} "Copot Pemasangan ${INFO_PRODUCTNAME}"
+LangString UNINSTALL_CONFIRM_TITLE ${LANG_INDONESIAN} "Copot Pemasangan ${INFO_PRODUCTNAME}"
+LangString UNINSTALL_CONFIRM_SUBTITLE ${LANG_INDONESIAN} "Pilih opsi pencopotan pemasangan."
+LangString UNINSTALL_CONFIRM_LABEL ${LANG_INDONESIAN} "Apakah Anda yakin ingin menghapus ${INFO_PRODUCTNAME} beserta seluruh komponennya dari komputer Anda?"
+LangString UNINSTALL_CHECKBOX_TEXT ${LANG_INDONESIAN} "Hapus data pengguna (file konfigurasi, sesi login, dan cache)"
 
 # English strings
 LangString WELCOME_TITLE ${LANG_ENGLISH} "Install / Update ${INFO_PRODUCTNAME}"
@@ -109,6 +115,10 @@ LangString COMP_SEC_STARTUP ${LANG_ENGLISH} "Run at Windows Startup"
 LangString COMP_SEC_STARTUP_DESC ${LANG_ENGLISH} "Automatically launch the application in the background when the computer starts."
 LangString UNINSTALL_OLD_VER_CONFIRM ${LANG_ENGLISH} "A previous version of ${INFO_PRODUCTNAME} was detected in a different directory: $OldInstallDir.$\r$\n$\r$\nDo you want to automatically uninstall the old version before continuing?"
 LangString UNINSTALL_SHORTCUT_TEXT ${LANG_ENGLISH} "Uninstall ${INFO_PRODUCTNAME}"
+LangString UNINSTALL_CONFIRM_TITLE ${LANG_ENGLISH} "Uninstall ${INFO_PRODUCTNAME}"
+LangString UNINSTALL_CONFIRM_SUBTITLE ${LANG_ENGLISH} "Choose uninstall options."
+LangString UNINSTALL_CONFIRM_LABEL ${LANG_ENGLISH} "Are you sure you want to remove ${INFO_PRODUCTNAME} and all of its components from your computer?"
+LangString UNINSTALL_CHECKBOX_TEXT ${LANG_ENGLISH} "Delete user data (configuration files, login sessions, and cache)"
 
 ## The following two statements can be used to sign the installer and the uninstaller. The path to the binaries are provided in %1
 #!uninstfinalize 'signtool --file "%1"'
@@ -129,25 +139,29 @@ ShowInstDetails show # This will always show the installation details.
 
 Var OldInstallDir
 Var OldUninstallPath
+Var Dialog
+Var Label
+Var Checkbox
+Var CheckboxState
 
 Function checkAppRunning
-  loop:
-  ClearErrors
-  FileOpen $0 "$INSTDIR\${PRODUCT_EXECUTABLE}" "a"
-  FileClose $0
-  IfErrors running not_running
+  # Cek apakah file executable benar-benar ada di disk sebelum mengecek file lock
+  IfFileExists "$INSTDIR\${PRODUCT_EXECUTABLE}" check_lock done
+  check_lock:
+    ClearErrors
+    FileOpen $0 "$INSTDIR\${PRODUCT_EXECUTABLE}" "a"
+    FileClose $0
+    IfErrors running done
   running:
     # Tampilkan prompt menawarkan untuk menutup aplikasi otomatis
-    MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION "$(APP_RUNNING_WARN)" IDYES auto_close IDNO loop
+    MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION "$(APP_RUNNING_WARN)" IDYES auto_close IDNO check_lock
     Abort
   auto_close:
     # Jalankan taskkill secara silent
     nsExec::Exec 'taskkill /f /im "${PRODUCT_EXECUTABLE}"'
     Sleep 1000 # Tunggu 1 detik agar proses benar-benar mati
-    Goto loop
-  cancel:
-    Abort
-  not_running:
+    Goto check_lock
+  done:
 FunctionEnd
 
 Function checkAndUninstallOldVersion
@@ -182,6 +196,31 @@ Function .onInit
      ReadRegStr $2 HKLM "${UNINST_KEY}" "InstallLocation"
    ${EndIf}
 
+   # Jika terdeteksi, bersihkan tanda kutip dari UninstallString untuk mengecek keberadaannya
+   ${If} $0 != ""
+     StrCpy $3 $0
+     StrCpy $4 $3 1 0
+     ${If} $4 == '"'
+       StrCpy $3 $3 "" 1
+       StrCpy $3 $3 -1
+     ${EndIf}
+     
+     # Periksa apakah file uninstaller benar-benar ada di disk
+     ClearErrors
+     IfFileExists $3 file_exists file_not_exists
+     file_not_exists:
+       StrCpy $0 ""
+       StrCpy $1 ""
+       StrCpy $2 ""
+       Goto check_done
+     file_exists:
+       # Jika ada uninstaller tapi InstallLocation ($2) kosong, ekstraksi dari uninstaller path
+       ${If} $2 == ""
+         ${GetParent} "$3" $2
+       ${EndIf}
+     check_done:
+   ${EndIf}
+
    # Jika terdeteksi sudah terinstal, gunakan direktori instalasi yang sudah ada
    ${If} $0 != ""
      StrCpy $OldUninstallPath $0
@@ -214,6 +253,18 @@ Section "$(COMP_SEC_APP)" SecApp
     !insertmacro wails.associateCustomProtocols
 
     !insertmacro wails.writeUninstaller
+
+    # Write InstallLocation in registry so we can retrieve it later
+    SetRegView 64
+    !ifdef WAILS_INSTALL_SCOPE
+      !if "${WAILS_INSTALL_SCOPE}" == "user"
+        WriteRegStr HKCU "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+      !else
+        WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+      !endif
+    !else
+        WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+    !endif
 SectionEnd
 
 # Komponen 2: Shortcut di Desktop (Opsional)
@@ -244,18 +295,53 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SecStartup} "$(COMP_SEC_STARTUP_DESC)"
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
+Function un.ConfirmPage
+  !insertmacro MUI_HEADER_TEXT "$(UNINSTALL_CONFIRM_TITLE)" "$(UNINSTALL_CONFIRM_SUBTITLE)"
+
+  nsDialogs::Create 1018
+  Pop $Dialog
+
+  ${If} $Dialog == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 30u "$(UNINSTALL_CONFIRM_LABEL)"
+  Pop $Label
+
+  ${NSD_CreateCheckbox} 0 45u 100% 15u "$(UNINSTALL_CHECKBOX_TEXT)"
+  Pop $Checkbox
+
+  # Default: Unchecked
+  ${NSD_Uncheck} $Checkbox
+
+  nsDialogs::Show
+FunctionEnd
+
+Function un.ConfirmPageLeave
+  ${NSD_GetState} $Checkbox $CheckboxState
+FunctionEnd
+
 Section "uninstall"
     !insertmacro wails.setShellContext
 
-    # Tanyakan apakah ingin menghapus data konfigurasi, sesi login, dan cache
-    MessageBox MB_YESNO|MB_ICONQUESTION "$(UNINSTALL_CONFIRM_TEXT)" IDNO skip_data_deletion
+    # Pastikan aplikasi dan tunnel ditutup agar file tidak terkunci saat dihapus
+    nsExec::Exec 'taskkill /f /im "${PRODUCT_EXECUTABLE}"'
+    nsExec::Exec 'taskkill /f /im "cloudflared.exe"'
+    Sleep 1000
+
+    # Hapus data konfigurasi, sesi login, dan cache jika dicentang oleh user
+    ${If} $CheckboxState == 1
         # Hapus data konfigurasi dan sesi Telegram (Go backend)
-        RMDir /r "$AppData\teledrive"
+        RMDir /r "$PROFILE\AppData\Roaming\teledrive"
+        RMDir /r "$PROFILE\AppData\Local\teledrive"
         # Hapus data cache WebView2
-        RMDir /r "$AppData\${PRODUCT_EXECUTABLE}"
-        RMDir /r "$AppData\${INFO_PRODUCTNAME}"
-        RMDir /r "$AppData\${INFO_PROJECTNAME}"
-    skip_data_deletion:
+        RMDir /r "$PROFILE\AppData\Roaming\${PRODUCT_EXECUTABLE}"
+        RMDir /r "$PROFILE\AppData\Roaming\${INFO_PRODUCTNAME}"
+        RMDir /r "$PROFILE\AppData\Roaming\${INFO_PROJECTNAME}"
+        RMDir /r "$PROFILE\AppData\Local\${PRODUCT_EXECUTABLE}"
+        RMDir /r "$PROFILE\AppData\Local\${INFO_PRODUCTNAME}"
+        RMDir /r "$PROFILE\AppData\Local\${INFO_PROJECTNAME}"
+    ${EndIf}
 
     RMDir /r $INSTDIR
 

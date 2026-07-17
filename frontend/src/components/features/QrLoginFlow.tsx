@@ -44,17 +44,17 @@ export default function QrLoginFlow({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
       <div style={{ textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'Google Sans, sans-serif', fontSize: 22, fontWeight: 500, color: 'var(--on-surface)', marginBottom: 4 }}>
+        <h2 style={{ fontFamily: 'Google Sans, sans-serif', fontSize: 22, fontWeight: 500, color: 'var(--md-on-surface)', marginBottom: 4 }}>
           {t.qrTitle}
         </h2>
-        <p style={{ color: 'var(--on-surface-variant)', fontSize: 13.5, lineHeight: 1.5, margin: 0 }}>
+        <p style={{ color: 'var(--md-on-surface)', opacity: 0.8, fontSize: 13.5, lineHeight: 1.5, margin: 0 }}>
           {t.qrDesc}
         </p>
       </div>
 
       {!isApiConfigured ? (
         <form onSubmit={handleSaveApiAndStartQR} style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%' }} noValidate>
-          <p style={{ fontSize: 13, color: 'var(--on-surface-variant)', textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--md-on-surface)', opacity: 0.8, textAlign: 'center', lineHeight: 1.5, margin: 0 }}>
             {t.qrWarn}
           </p>
           <ApiConfigForm
@@ -72,15 +72,15 @@ export default function QrLoginFlow({
           />
         </form>
       ) : qrLoading ? (
-        <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: 16 }}>
-          <div style={{ width: 40, height: 40, border: '3px solid var(--primary-container, #d3e3fd)', borderTopColor: 'var(--primary, #0b57d0)', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
+        <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--md-surface)', borderRadius: 16 }}>
+          <div style={{ width: 40, height: 40, border: '3px solid var(--md-primary-container, #d3e3fd)', borderTopColor: 'var(--md-primary, #0b57d0)', borderRadius: '50%', animation: 'spin .8s linear infinite' }} />
         </div>
       ) : qrCodeUrl ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
           <div style={{ position: 'relative' }}>
             <div style={{
               padding: 10, background: '#ffffff', borderRadius: 16,
-              border: '1.5px solid var(--outline-variant, #c4c7cf)', boxShadow: '0 4px 12px rgba(0,0,0,.05)',
+              border: '1.5px solid var(--md-outline-variant, #c4c7cf)', boxShadow: '0 4px 12px rgba(0,0,0,.05)',
               opacity: secondsLeft === 0 ? 0.2 : 1, transition: 'opacity .3s',
             }}>
               <img
@@ -95,11 +95,11 @@ export default function QrLoginFlow({
                 position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 10,
               }}>
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--on-surface)' }}>{t.qrExpired}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--md-on-surface)' }}>{t.qrExpired}</span>
                 <button
                   onClick={handleRefreshQR}
                   style={{
-                    background: 'var(--primary, #0b57d0)', color: 'white', border: 'none',
+                    background: 'var(--md-primary, #0b57d0)', color: 'var(--md-on-primary, #ffffff)', border: 'none',
                     borderRadius: 100, padding: '8px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
                   }}
                 >
@@ -110,19 +110,19 @@ export default function QrLoginFlow({
           </div>
 
           {secondsLeft > 0 && (
-            <span style={{ fontSize: 12, color: 'var(--on-surface-variant)' }}>
-              {t.qrExpiring} <strong style={{ color: 'var(--primary, #0b57d0)' }}>{secondsLeft} {t.sec}</strong>
+            <span style={{ fontSize: 12, color: 'var(--md-on-surface)', opacity: 0.8 }}>
+              {t.qrExpiring} <strong style={{ color: 'var(--md-primary, #0b57d0)' }}>{secondsLeft} {t.sec}</strong>
             </span>
           )}
           
           {/* Collapsible API config link inside QR login for convenience */}
-          <div style={{ border: '1px solid var(--outline-variant, #c4c7cf)', borderRadius: 10, overflow: 'hidden', width: '100%', marginTop: 8 }}>
+          <div style={{ border: '1px solid var(--md-outline-variant, #c4c7cf)', borderRadius: 10, overflow: 'hidden', width: '100%', marginTop: 8 }}>
             <button
               type="button"
               onClick={() => setShowApiConfig(v => !v)}
               style={{
                 width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--on-surface-variant)', fontSize: 12.5,
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--md-on-surface)', opacity: 0.8, fontSize: 12.5,
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -131,7 +131,7 @@ export default function QrLoginFlow({
               {showApiConfig ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
             </button>
             {showApiConfig && (
-              <div style={{ padding: '12px', borderTop: '1px solid var(--outline-variant, #c4c7cf)', background: 'var(--surface, #f0f4f9)' }}>
+              <div style={{ padding: '12px', borderTop: '1px solid var(--md-outline-variant, #c4c7cf)', background: 'var(--md-surface, #f0f4f9)' }}>
                 <ApiConfigForm
                   apiId={apiId}
                   setApiId={setApiId}
@@ -146,11 +146,11 @@ export default function QrLoginFlow({
           </div>
         </div>
       ) : (
-        <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: 16 }}>
+        <div style={{ width: 220, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--md-surface)', borderRadius: 16 }}>
           <button
             onClick={handleRefreshQR}
             style={{
-              background: 'var(--primary, #0b57d0)', color: 'white', border: 'none',
+              background: 'var(--md-primary, #0b57d0)', color: 'var(--md-on-primary, #ffffff)', border: 'none',
               borderRadius: 100, padding: '10px 20px', fontSize: 13, fontWeight: 500, cursor: 'pointer',
             }}
           >

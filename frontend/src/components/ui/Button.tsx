@@ -70,8 +70,8 @@ export function SubmitBtn({ loading, label, loadingLabel, disabled = false, styl
       type="submit" 
       disabled={isDisabled}
       style={{
-        background: isDisabled ? 'var(--outline-variant, #c4c7cf)' : 'var(--primary, #0b57d0)',
-        color: isDisabled ? 'var(--on-surface-variant, #44474f)' : 'var(--on-primary, #ffffff)',
+        background: isDisabled ? 'var(--md-outline-variant, #c4c7cf)' : 'var(--md-primary, #0b57d0)',
+        color: isDisabled ? 'var(--md-on-surface-variant, #44474f)' : 'var(--md-on-primary, #ffffff)',
         border: 'none', borderRadius: 100, padding: '13px',
         width: '100%', fontFamily: 'Google Sans, sans-serif',
         fontSize: 15, fontWeight: 500,

@@ -3,6 +3,8 @@ export const applyTheme = (dark: boolean) => {
   if (dark) {
     r.style.setProperty('--md-primary',              '#a8c7fa');
     r.style.setProperty('--md-on-primary',           '#062e6f');
+    r.style.setProperty('--md-primary-container',    '#003258');
+    r.style.setProperty('--md-on-primary-container', '#cce5ff');
     r.style.setProperty('--md-secondary-container',  '#003258');
     r.style.setProperty('--md-on-secondary-container','#cce5ff');
     r.style.setProperty('--md-surface',              '#131418');
@@ -26,6 +28,8 @@ export const applyTheme = (dark: boolean) => {
   } else {
     r.style.setProperty('--md-primary',              '#0b57d0');
     r.style.setProperty('--md-on-primary',           '#ffffff');
+    r.style.setProperty('--md-primary-container',    '#d3e3fd');
+    r.style.setProperty('--md-on-primary-container', '#041e49');
     r.style.setProperty('--md-secondary-container',  '#d3e3fd');
     r.style.setProperty('--md-on-secondary-container','#041e49');
     r.style.setProperty('--md-surface',              '#f0f4f9');

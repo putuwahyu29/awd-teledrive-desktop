@@ -3,11 +3,12 @@ import {
   SendCode, Login, GetAPICredentials, SetAPICredentials, StartQRLogin, CancelQRLogin 
 } from '../../wailsjs/go/main/App';
 import { EventsOn, EventsOff } from '../../wailsjs/runtime/runtime';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Sun, Moon } from 'lucide-react';
 
 import { LoginTranslations } from '../locales/translation';
 import PhoneLoginFlow from './features/PhoneLoginFlow';
 import QrLoginFlow from './features/QrLoginFlow';
+import { applyTheme } from '../utils/theme';
 
 /* ── CSS variables (mirror FileManager theme) ────────────────────────────── */
 const lightVars = {
@@ -32,6 +33,28 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [loginMethod, setLoginMethod] = useState('phone'); // 'phone' or 'qr'
   const [lang, setLang] = useState(localStorage.getItem('lang') || 'id');
   const t = LoginTranslations[lang as 'en' | 'id'] || LoginTranslations.id;
+
+  // Format disclaimer into label and content parts for premium styling
+  const disclaimerText = t.disclaimer || '';
+  const colonIndex = disclaimerText.indexOf(':');
+  const disclaimerTitle = colonIndex !== -1 ? disclaimerText.substring(0, colonIndex + 1) : 'Disclaimer:';
+  const disclaimerBody = colonIndex !== -1 ? disclaimerText.substring(colonIndex + 1) : disclaimerText;
+
+  const [dark, setDark] = useState(() => {
+    try {
+      const savedDark = localStorage.getItem('td_dark');
+      return savedDark !== null ? JSON.parse(savedDark) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleTheme = () => {
+    const nextDark = !dark;
+    setDark(nextDark);
+    localStorage.setItem('td_dark', JSON.stringify(nextDark));
+    applyTheme(nextDark);
+  };
   
   const toggleLang = () => {
     const newLang = lang === 'id' ? 'en' : 'id';
@@ -61,7 +84,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const isApiConfigured = apiId.trim().length > 0 && apiHash.trim().length >= 10;
 
   useEffect(() => {
-    applyVars(lightVars);
+    applyTheme(dark);
     // Load saved credentials
     GetAPICredentials().then(cfg => {
       if (cfg.api_id) setApiId(cfg.api_id);
@@ -286,9 +309,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="login-container">
-      <button onClick={toggleLang} className="lang-toggle-btn">
-        {lang === 'id' ? 'EN' : 'ID'}
-      </button>
+      <div className="top-actions">
+        <button onClick={toggleTheme} className="theme-toggle-btn" title={dark ? 'Mode Terang' : 'Mode Gelap'}>
+          {dark ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <button onClick={toggleLang} className="lang-toggle-btn">
+          {lang === 'id' ? 'EN' : 'ID'}
+        </button>
+      </div>
 
       {/* ── Left Banner ──────────────────────────────────────────────── */}
       <div className="login-left-banner">
@@ -316,11 +344,18 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           ].map((f, i) => (
             <div key={i} className="banner-feature-item">
               <div className="banner-feature-icon">
-                <CheckCircle size={14} color="var(--on-primary-container)" />
+                <CheckCircle size={14} className="banner-feature-svg" />
               </div>
               <span className="banner-feature-text">{f}</span>
             </div>
           ))}
+        </div>
+
+        <div className="banner-disclaimer">
+          <AlertCircle size={16} className="banner-disclaimer-icon" style={{ flexShrink: 0, marginTop: 2 }} />
+          <span>
+            <strong className="banner-disclaimer-title">{disclaimerTitle}</strong>{disclaimerBody}
+          </span>
         </div>
       </div>
 
@@ -328,15 +363,16 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       <div className="login-right-section">
         <div className="login-card">
           {/* Tabs header */}
-          <div style={{ display: 'flex', background: 'var(--surface)', borderRadius: 12, padding: 4, gap: 4 }}>
+          <div style={{ display: 'flex', background: 'var(--md-surface)', borderRadius: 12, padding: 4, gap: 4 }}>
             <button
               onClick={() => { setLoginMethod('phone'); clearErrors(); }}
               style={{
                 flex: 1, padding: '10px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontFamily: 'Google Sans, sans-serif', fontSize: 13, fontWeight: 500,
-                background: loginMethod === 'phone' ? 'var(--surface-container-lowest)' : 'transparent',
-                color: loginMethod === 'phone' ? 'var(--primary)' : 'var(--on-surface-variant)',
-                boxShadow: loginMethod === 'phone' ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
+                background: loginMethod === 'phone' ? 'var(--md-primary-container)' : 'transparent',
+                color: loginMethod === 'phone' ? 'var(--md-on-primary-container)' : 'var(--md-on-surface)',
+                opacity: loginMethod === 'phone' ? 1 : 0.6,
+                boxShadow: loginMethod === 'phone' ? '0 1px 3px rgba(0,0,0,.15)' : 'none',
                 transition: 'all .15s',
               }}
             >
@@ -347,9 +383,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
               style={{
                 flex: 1, padding: '10px', borderRadius: 8, border: 'none', cursor: 'pointer',
                 fontFamily: 'Google Sans, sans-serif', fontSize: 13, fontWeight: 500,
-                background: loginMethod === 'qr' ? 'var(--surface-container-lowest)' : 'transparent',
-                color: loginMethod === 'qr' ? 'var(--primary)' : 'var(--on-surface-variant)',
-                boxShadow: loginMethod === 'qr' ? '0 1px 3px rgba(0,0,0,.1)' : 'none',
+                background: loginMethod === 'qr' ? 'var(--md-primary-container)' : 'transparent',
+                color: loginMethod === 'qr' ? 'var(--md-on-primary-container)' : 'var(--md-on-surface)',
+                opacity: loginMethod === 'qr' ? 1 : 0.6,
+                boxShadow: loginMethod === 'qr' ? '0 1px 3px rgba(0,0,0,.15)' : 'none',
                 transition: 'all .15s',
               }}
             >
@@ -360,9 +397,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           {/* Global error */}
           {globalError && (
             <div style={{
-              background: 'var(--error-container)', color: 'var(--on-error-container)',
+              background: 'var(--md-error-container)', color: 'var(--md-on-error-container)',
               borderRadius: 10, padding: '10px 14px', fontSize: 13,
-              border: '1px solid var(--error)', lineHeight: 1.5,
+              border: '1px solid var(--md-error)', lineHeight: 1.5,
               display: 'flex', alignItems: 'flex-start', gap: 8,
             }}>
               <AlertCircle size={15} style={{ marginTop: 1, flexShrink: 0 }} />
@@ -421,11 +458,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             />
           )}
 
-          <div style={{ fontSize: 11.5, color: 'var(--on-surface-variant)', textAlign: 'center', lineHeight: 1.6, marginTop: -4 }}>
-            <p style={{ margin: '0 0 12px 0' }}>{t.footerText}</p>
-            <p style={{ margin: 0, fontWeight: 500, color: 'var(--on-surface)', background: 'var(--surface)', padding: 12, borderRadius: 8, border: '1px solid var(--outline-variant)' }}>
-              {t.disclaimer}
-            </p>
+          <div style={{ fontSize: 12, color: 'var(--md-on-surface-variant)', textAlign: 'center', lineHeight: 1.6, marginTop: -4 }}>
+            <p style={{ margin: 0 }}>{t.footerText}</p>
           </div>
         </div>
       </div>
@@ -440,65 +474,100 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           display: flex;
           width: 100%;
           height: 100vh;
-          background: var(--surface);
+          background: var(--md-surface);
+          color: var(--md-on-surface);
           font-family: Roboto, sans-serif;
           position: relative;
         }
 
-        .lang-toggle-btn {
+        .top-actions {
           position: absolute;
-          top: 20px;
-          right: 20px;
+          top: 24px;
+          right: 24px;
           z-index: 10;
-          background: var(--surface-container-lowest);
-          border: 1px solid var(--outline-variant);
-          color: var(--on-surface);
-          padding: 6px 12px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .theme-toggle-btn {
+          background: var(--md-surface-container-lowest);
+          border: 1px solid var(--md-outline-variant);
+          color: var(--md-on-surface);
+          padding: 0;
+          border-radius: 50%;
+          cursor: pointer;
+          width: 38px;
+          height: 38px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          transition: background 0.2s, border-color 0.2s, color 0.2s;
+          outline: none;
+        }
+        .theme-toggle-btn:hover {
+          background: var(--md-surface-container-low);
+          border-color: var(--md-outline);
+          color: var(--md-primary);
+        }
+
+        .lang-toggle-btn {
+          background: var(--md-surface-container-lowest);
+          border: 1px solid var(--md-outline-variant);
+          color: var(--md-on-surface);
+          padding: 0 16px;
           border-radius: 100px;
           cursor: pointer;
+          height: 38px;
           font-size: 13px;
           font-weight: 600;
           box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           transition: background 0.2s, border-color 0.2s;
           outline: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         .lang-toggle-btn:hover {
-          background: var(--surface-container-low);
-          border-color: var(--outline);
+          background: var(--md-surface-container-low);
+          border-color: var(--md-outline);
         }
 
         .login-left-banner {
           flex: 1;
-          background: var(--primary-container);
+          background: var(--md-primary-container);
           display: flex;
           flex-direction: column;
-          justify-content: center;
+          justify-content: space-between;
           padding: 64px;
           position: relative;
           overflow: hidden;
-          border-right: 1px solid var(--outline-variant);
+          border-right: 1px solid var(--md-outline-variant);
         }
 
         .banner-circle-1 {
           position: absolute;
-          width: 500px;
-          height: 500px;
+          width: 600px;
+          height: 600px;
           border-radius: 50%;
-          background: var(--primary);
-          opacity: 0.08;
-          top: -100px;
-          left: -100px;
+          background: radial-gradient(circle, rgba(11,87,208,0.2) 0%, rgba(11,87,208,0) 70%);
+          filter: blur(80px);
+          top: -150px;
+          left: -150px;
+          pointer-events: none;
         }
 
         .banner-circle-2 {
           position: absolute;
-          width: 350px;
-          height: 350px;
+          width: 500px;
+          height: 500px;
           border-radius: 50%;
-          background: var(--primary);
-          opacity: 0.06;
-          bottom: -60px;
-          right: -60px;
+          background: radial-gradient(circle, rgba(30,136,229,0.18) 0%, rgba(30,136,229,0) 70%);
+          filter: blur(80px);
+          bottom: -100px;
+          right: -100px;
+          pointer-events: none;
         }
 
         .banner-content {
@@ -513,22 +582,26 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           height: 72px;
           border-radius: 16px;
           margin-bottom: 28px;
-          box-shadow: 0 4px 20px rgba(0,0,0,.08);
+          box-shadow: 0 12px 32px rgba(11, 87, 208, 0.16);
           object-fit: contain;
+          transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .banner-logo:hover {
+          transform: scale(1.08) rotate(3deg);
         }
 
         .banner-title {
           font-family: 'Google Sans', sans-serif;
           font-size: 2.6rem;
-          font-weight: 500;
-          color: var(--on-primary-container);
+          font-weight: 600;
+          color: var(--md-on-primary-container);
           margin-bottom: 16px;
           line-height: 1.2;
         }
 
         .banner-desc {
           font-size: 1rem;
-          color: var(--on-primary-container);
+          color: var(--md-on-primary-container);
           opacity: 0.8;
           line-height: 1.7;
           margin-bottom: 40px;
@@ -539,6 +612,10 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           align-items: center;
           gap: 12px;
           margin-bottom: 14px;
+          transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .banner-feature-item:hover {
+          transform: translateX(8px);
         }
 
         .banner-feature-icon {
@@ -546,35 +623,88 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           height: 26px;
           border-radius: 50%;
           flex-shrink: 0;
-          background: rgba(11,87,208,.18);
+          background: rgba(11,87,208,.12);
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: background 0.25s ease;
+        }
+        .banner-feature-item:hover .banner-feature-icon {
+          background: var(--md-primary);
+        }
+
+        .banner-feature-svg {
+          color: var(--md-on-primary-container);
+          transition: color 0.25s ease;
+        }
+        .banner-feature-item:hover .banner-feature-svg {
+          color: var(--md-on-primary) !important;
         }
 
         .banner-feature-text {
           font-size: 13.5px;
-          color: var(--on-primary-container);
+          color: var(--md-on-primary-container);
           opacity: 0.85;
+          transition: opacity 0.25s ease;
+        }
+        .banner-feature-item:hover .banner-feature-text {
+          opacity: 1;
+        }
+
+        .banner-disclaimer {
+          position: relative;
+          z-index: 1;
+          margin-top: 24px;
+          padding: 14px 18px;
+          border-radius: 14px;
+          background: var(--md-surface-variant);
+          border: 1px solid var(--md-outline-variant);
+          font-size: 12px;
+          color: var(--md-on-primary-container);
+          line-height: 1.6;
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+          transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+        .banner-disclaimer:hover {
+          background: var(--md-surface-container-high);
+          border-color: rgba(11, 87, 208, 0.3);
+          box-shadow: 0 8px 30px rgba(11, 87, 208, 0.06);
+        }
+
+        .banner-disclaimer-icon {
+          color: var(--md-primary);
+          transition: transform 0.3s ease;
+        }
+        .banner-disclaimer:hover .banner-disclaimer-icon {
+          transform: scale(1.1) rotate(5deg);
+        }
+
+        .banner-disclaimer-title {
+          font-weight: 600;
+          color: var(--md-primary);
+          margin-right: 4px;
         }
 
         .login-right-section {
           flex: 1;
           display: flex;
-          align-items: center;
-          justify-content: center;
           padding: 32px;
           overflow-y: auto;
         }
 
         .login-card {
-          background: var(--surface-container-lowest);
+          background: var(--md-surface-container-lowest);
+          color: var(--md-on-surface);
           border-radius: 24px;
           width: 100%;
           max-width: 440px;
+          margin: auto;
           box-shadow: 0 2px 20px rgba(0,0,0,.08);
           padding: 36px 40px;
-          border: 1px solid var(--outline-variant);
+          border: 1px solid var(--md-outline-variant);
           display: flex;
           flex-direction: column;
           gap: 20px;
@@ -597,9 +727,29 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             padding: 16px;
           }
           .login-card {
-            padding: 28px 20px;
+            padding: 24px 20px;
             border-radius: 16px;
             gap: 16px;
+          }
+        }
+
+        @media (max-height: 640px) {
+          .login-right-section {
+            padding: 16px;
+          }
+          .login-card {
+            padding: 20px 24px;
+            gap: 14px;
+          }
+          .login-left-banner {
+            padding: 32px;
+          }
+          .banner-title {
+            font-size: 2rem;
+            margin-bottom: 8px;
+          }
+          .banner-desc {
+            margin-bottom: 20px;
           }
         }
       `}</style>

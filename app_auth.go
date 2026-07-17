@@ -283,7 +283,8 @@ func (a *App) Login(phoneCode string, password string) map[string]interface{} {
 func (a *App) Logout() map[string]interface{} {
 	api := a.getAPI()
 	if api != nil {
-		go func() {
+		// Try to log out from Telegram server (best effort, synchronous with 2s timeout)
+		func() {
 			defer func() {
 				if r := recover(); r != nil {
 					fmt.Printf("[Teledrive] Recovered from AuthLogOut panic: %v\n", r)
@@ -291,9 +292,31 @@ func (a *App) Logout() map[string]interface{} {
 			}()
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			api.AuthLogOut(ctx)
+			_, _ = api.AuthLogOut(ctx)
 		}()
 	}
+
+	// Cancel the client context
+	if a.clientCancel != nil {
+		a.clientCancel()
+	}
+
+	// Wait for the client goroutine to finish (max 2 seconds) to avoid file locks
+	for i := 0; i < 20; i++ {
+		a.apiMu.RLock()
+		running := a.clientRunning
+		a.apiMu.RUnlock()
+		if !running {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Stop web server to release cloudflared executable lock
+	if a.webServer != nil {
+		a.webServer.Stop()
+	}
+
 	userDataDir, _ := os.UserConfigDir()
 	teledriveDir := filepath.Join(userDataDir, "teledrive")
 	if err := os.RemoveAll(teledriveDir); err != nil {
@@ -301,12 +324,16 @@ func (a *App) Logout() map[string]interface{} {
 	}
 	_ = os.MkdirAll(teledriveDir, 0755)
 
-	if a.clientCancel != nil {
-		a.clientCancel()
+	// Restart the web server
+	if a.webServer != nil {
+		_ = a.webServer.Start()
 	}
+
+	// Recreate client context and channel cache
 	a.clientCtx, a.clientCancel = context.WithCancel(a.ctx)
 	a.connectedCh = make(chan struct{})
 	a.channelCache = make(map[int64]*tg.InputPeerChannel)
+	
 	a.buildClient()
 	go a.runClient()
 
