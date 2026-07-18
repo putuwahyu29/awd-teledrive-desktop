@@ -45,6 +45,7 @@ type App struct {
 	qrCancel   context.CancelFunc
 	qrMu       sync.Mutex
 	webServer  *WebServer
+	quitting   bool
 }
 
 func NewApp() *App {
@@ -107,25 +108,16 @@ func (a *App) shutdown(ctx context.Context) {
 
 // BeforeClose is called when user clicks X — minimize to tray if enabled or ask confirmation
 func (a *App) BeforeClose(ctx context.Context) (prevent bool) {
+	if a.quitting {
+		return false
+	}
 	if a.minimizeToTray {
 		runtime.WindowHide(ctx)
 		return true // prevent actual close
 	}
-	res, err := runtime.MessageDialog(ctx, runtime.MessageDialogOptions{
-		Type:          runtime.QuestionDialog,
-		Title:         "Konfirmasi Tutup Aplikasi",
-		Message:       "Apakah Anda yakin ingin menutup aplikasi Awd TeleDrive?",
-		Buttons:       []string{"Ya, Tutup", "Batal"},
-		DefaultButton: "Batal",
-		CancelButton:  "Batal",
-		Icon:          appIcon,
-	})
-	if err != nil {
-		return false
-	}
-	if res == "Ya, Tutup" || res == "Yes" {
-		return false
-	}
+	
+	// Request frontend to show material dialog
+	runtime.EventsEmit(ctx, "app:request-exit-confirm")
 	return true
 }
 

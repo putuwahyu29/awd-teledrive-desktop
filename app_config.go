@@ -145,6 +145,7 @@ func (a *App) ShowWindow() {
 }
 
 func (a *App) QuitApp() {
+	a.quitting = true
 	a.minimizeToTray = false
 	runtime.Quit(a.ctx)
 }
