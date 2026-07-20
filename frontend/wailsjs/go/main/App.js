@@ -18,6 +18,10 @@ export function CheckAuth() {
   return window['go']['main']['App']['CheckAuth']();
 }
 
+export function CheckForUpdates() {
+  return window['go']['main']['App']['CheckForUpdates']();
+}
+
 export function ClearCache() {
   return window['go']['main']['App']['ClearCache']();
 }
@@ -60,6 +64,10 @@ export function DownloadTelephotoFile(arg1, arg2, arg3, arg4, arg5, arg6) {
 
 export function GetAPICredentials() {
   return window['go']['main']['App']['GetAPICredentials']();
+}
+
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
 }
 
 export function GetChannelParticipants(arg1) {
@@ -180,6 +188,10 @@ export function OpenFileDialog() {
 
 export function OpenMultiFileDialog() {
   return window['go']['main']['App']['OpenMultiFileDialog']();
+}
+
+export function OpenReleaseURL(arg1) {
+  return window['go']['main']['App']['OpenReleaseURL'](arg1);
 }
 
 export function PreviewFile(arg1, arg2, arg3) {

@@ -1,0 +1,60 @@
+[
+  {
+    "version": "1.1.0",
+    "date": "2026-07-21",
+    "title": {
+      "id": "Pembaruan Fitur Unggah Split, Folder Arsip & Cek Pembaruan",
+      "en": "Split Upload, Archive Folder & Update Checker Feature"
+    },
+    "changes": {
+      "id": [
+        "Mendukung unggahan file berukuran besar di atas 2 GB dengan metode pemisahan berkas (Split Upload) yang kompatibel dengan aplikasi Android.",
+        "Penggabungan otomatis bagian-bagian file saat diunduh tanpa menggunakan ruang penyimpanan sementara lokal tambahan.",
+        "Memperbaiki visibilitas folder private channel agar channel yang diarsipkan tetap terbaca di daftar folder utama.",
+        "Menambahkan fitur pengecekan pembaruan otomatis secara berkala dan halaman rincian Tentang Aplikasi."
+      ],
+      "en": [
+        "Support uploading large files (>2 GB) using file splitting (Split Upload) compatible with the Android app.",
+        "Automatically merge split parts during download without local temporary disk space overhead.",
+        "Fixed folder visibility so archived private channels remain accessible in the main directory list.",
+        "Added scheduled automatic update checks and detailed About Application section."
+      ]
+    }
+  },
+  {
+    "version": "1.0.1",
+    "date": "2026-07-17",
+    "title": {
+      "id": "Perbaikan Instalasi Windows",
+      "en": "Windows Installation Fix"
+    },
+    "changes": {
+      "id": [
+        "Memperbaiki proses instalasi aplikasi untuk sistem operasi Windows."
+      ],
+      "en": [
+        "Fixed the application installation process for Windows operating systems."
+      ]
+    }
+  },
+  {
+    "version": "1.0.0",
+    "date": "2026-06-15",
+    "title": {
+      "id": "Rilis Awal Awd TeleDrive",
+      "en": "Initial Release of Awd TeleDrive"
+    },
+    "changes": {
+      "id": [
+        "Gunakan Telegram sebagai penyimpanan awan (cloud storage) tanpa batas secara gratis.",
+        "Unggah dan unduh file/folder dengan cepat.",
+        "Kelola sinkronisasi otomatis dan backup otomatis dari folder komputer Anda ke chat Telegram."
+      ],
+      "en": [
+        "Use Telegram as your unlimited free cloud storage.",
+        "Upload and download files/folders quickly.",
+        "Manage automatic sync and backups of your computer folders to Telegram chats."
+      ]
+    }
+  }
+]

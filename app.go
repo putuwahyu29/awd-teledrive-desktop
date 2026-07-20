@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	_ "embed"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -128,4 +131,83 @@ var (
 
 func (a *App) LogDebug(msg string) {
 	fmt.Println("[FRONTEND ERROR]", msg)
+}
+
+const AppVersion = "1.1.0"
+
+type VersionCheckResult struct {
+	HasUpdate     bool   `json:"has_update"`
+	LatestVersion string `json:"latest_version"`
+	UpdateURL     string `json:"update_url"`
+	ReleaseNotes  string `json:"release_notes"`
+}
+
+func compareVersions(v1, v2 string) int {
+	v1 = strings.TrimPrefix(v1, "v")
+	v2 = strings.TrimPrefix(v2, "v")
+	parts1 := strings.Split(v1, ".")
+	parts2 := strings.Split(v2, ".")
+	for i := 0; i < len(parts1) || i < len(parts2); i++ {
+		p1 := 0
+		p2 := 0
+		if i < len(parts1) {
+			p1, _ = strconv.Atoi(parts1[i])
+		}
+		if i < len(parts2) {
+			p2, _ = strconv.Atoi(parts2[i])
+		}
+		if p1 > p2 {
+			return 1
+		}
+		if p1 < p2 {
+			return -1
+		}
+	}
+	return 0
+}
+
+func (a *App) CheckForUpdates() (VersionCheckResult, error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/putuwahyu29/awd-teledrive-desktop/releases/latest", nil)
+	if err != nil {
+		return VersionCheckResult{}, err
+	}
+	req.Header.Set("User-Agent", "awd-teledrive-desktop-updater")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return VersionCheckResult{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return VersionCheckResult{}, fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	}
+
+	var release struct {
+		TagName string `json:"tag_name"`
+		HTMLURL string `json:"html_url"`
+		Body    string `json:"body"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return VersionCheckResult{}, err
+	}
+
+	hasUpdate := compareVersions(release.TagName, AppVersion) > 0
+
+	return VersionCheckResult{
+		HasUpdate:     hasUpdate,
+		LatestVersion: release.TagName,
+		UpdateURL:     release.HTMLURL,
+		ReleaseNotes:  release.Body,
+	}, nil
+}
+
+func (a *App) OpenReleaseURL(url string) {
+	runtime.BrowserOpenURL(a.ctx, url)
+}
+
+func (a *App) GetAppVersion() string {
+	return AppVersion
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Login from './components/Login';
 import FileManager from './components/FileManager';
-import { CheckAuth, Logout } from '../wailsjs/go/main/App';
+import { CheckAuth, Logout, CheckForUpdates, OpenReleaseURL } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import './index.css';
 
@@ -10,6 +10,13 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [showReset, setShowReset] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{
+    has_update: boolean;
+    latest_version: string;
+    update_url: string;
+    release_notes: string;
+  } | null>(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const lang = localStorage.getItem('lang') || 'id';
 
   useEffect(() => {
@@ -30,9 +37,31 @@ function App() {
         setIsLoading(false);
       });
 
+    const checkUpdates = () => {
+      CheckForUpdates()
+        .then(info => {
+          if (info && info.has_update) {
+            setUpdateInfo(info);
+            setShowUpdateModal(true);
+          }
+        })
+        .catch(e => console.error('Failed to check for updates:', e));
+    };
+
+    checkUpdates();
+
+    const offCheckUpdates = EventsOn('menu:check-updates', () => {
+      checkUpdates();
+    });
+
+    // Check for updates every 2 hours
+    const updateInterval = setInterval(checkUpdates, 2 * 60 * 60 * 1000);
+
     return () => {
       clearTimeout(timer);
+      clearInterval(updateInterval);
       if (typeof offExitPrompt === 'function') offExitPrompt();
+      if (typeof offCheckUpdates === 'function') offCheckUpdates();
     };
   }, []);
 
@@ -155,6 +184,91 @@ function App() {
                 }}
               >
                 Ya, Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpdateModal && updateInfo && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 9999, animation: 'fadeIn 0.25s ease',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--surface, #fff)', width: '420px', padding: '28px',
+            borderRadius: '28px', textAlign: 'left', boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+            border: '1px solid var(--outline-variant, #e1e2ec)',
+            fontFamily: 'Google Sans, Roboto, sans-serif',
+            display: 'flex', flexDirection: 'column', gap: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                background: 'var(--primary-container, #d3e3fd)',
+                borderRadius: '12px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary, #0b57d0)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </div>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '500', color: 'var(--on-surface, #1d1b20)' }}>
+                {lang === 'id' ? 'Pembaruan Tersedia' : 'Update Available'}
+              </h3>
+            </div>
+
+            <p style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--on-surface-variant, #49454f)', margin: 0 }}>
+              {lang === 'id' 
+                ? `Versi baru (${updateInfo.latest_version}) telah dirilis. Versi Anda saat ini adalah 1.1.0.`
+                : `A new version (${updateInfo.latest_version}) is available. Your current version is 1.1.0.`}
+            </p>
+
+            {updateInfo.release_notes && (
+              <div style={{
+                backgroundColor: 'var(--surface-container-low, #f7f9fc)',
+                borderRadius: '16px', padding: '12px 16px', fontSize: '13px',
+                color: 'var(--on-surface-variant, #49454f)', maxHeight: '160px',
+                overflowY: 'auto', border: '1px solid var(--outline-variant, #e1e2ec)',
+                whiteSpace: 'pre-wrap', lineHeight: '1.5'
+              }}>
+                <strong style={{ display: 'block', marginBottom: '6px', color: 'var(--on-surface, #1d1b20)' }}>
+                  {lang === 'id' ? 'Catatan Rilis:' : 'Release Notes:'}
+                </strong>
+                {updateInfo.release_notes}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+              <button
+                onClick={() => setShowUpdateModal(false)}
+                style={{
+                  background: 'transparent', border: 'none', color: 'var(--primary, #0b57d0)',
+                  padding: '10px 20px', borderRadius: '100px', cursor: 'pointer', fontWeight: 500,
+                  fontSize: '14px', transition: 'background-color 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(11,87,208,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                {lang === 'id' ? 'Nanti Saja' : 'Later'}
+              </button>
+              <button
+                onClick={() => {
+                  OpenReleaseURL(updateInfo.update_url);
+                  setShowUpdateModal(false);
+                }}
+                style={{
+                  background: 'var(--primary, #0b57d0)', border: 'none', color: 'var(--on-primary, #fff)',
+                  padding: '10px 20px', borderRadius: '100px', cursor: 'pointer', fontWeight: 500,
+                  fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)', transition: 'filter 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.filter = 'brightness(0.9)'}
+                onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+              >
+                {lang === 'id' ? 'Perbarui Sekarang' : 'Update Now'}
               </button>
             </div>
           </div>

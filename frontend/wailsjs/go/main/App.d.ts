@@ -10,6 +10,8 @@ export function CancelQRLogin():Promise<void>;
 
 export function CheckAuth():Promise<boolean>;
 
+export function CheckForUpdates():Promise<main.VersionCheckResult>;
+
 export function ClearCache():Promise<Record<string, any>>;
 
 export function ClearRecentFiles():Promise<Record<string, any>>;
@@ -31,6 +33,8 @@ export function DownloadFolder(arg1:string,arg2:string):Promise<Record<string, a
 export function DownloadTelephotoFile(arg1:string,arg2:string,arg3:string,arg4:number,arg5:boolean,arg6:string):Promise<Record<string, any>>;
 
 export function GetAPICredentials():Promise<main.AppConfig>;
+
+export function GetAppVersion():Promise<string>;
 
 export function GetChannelParticipants(arg1:string):Promise<Array<Record<string, any>>>;
 
@@ -91,6 +95,8 @@ export function OpenDirectoryDialog():Promise<string>;
 export function OpenFileDialog():Promise<string>;
 
 export function OpenMultiFileDialog():Promise<Array<string>>;
+
+export function OpenReleaseURL(arg1:string):Promise<void>;
 
 export function PreviewFile(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
 

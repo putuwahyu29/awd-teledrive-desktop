@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sys/windows"
 )
 
@@ -40,8 +41,10 @@ const (
 	MF_STRING       = 0x00000000
 	MF_SEPARATOR    = 0x00000800
 
-	ID_TRAY_OPEN = 1001
-	ID_TRAY_QUIT = 1002
+	ID_TRAY_OPEN         = 1001
+	ID_TRAY_QUIT         = 1002
+	ID_TRAY_ABOUT        = 1003
+	ID_TRAY_CHECK_UPDATE = 1004
 )
 
 var (
@@ -174,6 +177,13 @@ func (a *App) runTrayLoop() {
 			switch id {
 			case ID_TRAY_OPEN:
 				a.ShowWindow()
+			case ID_TRAY_ABOUT:
+				a.ShowWindow()
+				runtime.EventsEmit(a.ctx, "menu:navigate", "changelog")
+			case ID_TRAY_CHECK_UPDATE:
+				a.ShowWindow()
+				runtime.EventsEmit(a.ctx, "menu:navigate", "changelog")
+				runtime.EventsEmit(a.ctx, "menu:check-updates")
 			case ID_TRAY_QUIT:
 				shellNotifyIcon(NIM_DELETE, &trayNID)
 				procPostQuitMessage.Call(0)
@@ -248,10 +258,14 @@ func (a *App) showTrayMenu(hwnd windows.HWND) {
 
 	hMenu, _, _ := procCreatePopupMenu.Call()
 	openStr, _ := syscall.UTF16PtrFromString("Buka Awd TeleDrive")
+	aboutStr, _ := syscall.UTF16PtrFromString("Tentang & Pembaruan")
+	checkStr, _ := syscall.UTF16PtrFromString("Periksa Pembaruan")
 	quitStr, _ := syscall.UTF16PtrFromString("Keluar")
 	sepPtr, _ := syscall.UTF16PtrFromString("")
 
 	procAppendMenuW.Call(hMenu, MF_STRING, ID_TRAY_OPEN, uintptr(unsafe.Pointer(openStr)))
+	procAppendMenuW.Call(hMenu, MF_STRING, ID_TRAY_ABOUT, uintptr(unsafe.Pointer(aboutStr)))
+	procAppendMenuW.Call(hMenu, MF_STRING, ID_TRAY_CHECK_UPDATE, uintptr(unsafe.Pointer(checkStr)))
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, uintptr(unsafe.Pointer(sepPtr)))
 	procAppendMenuW.Call(hMenu, MF_STRING, ID_TRAY_QUIT, uintptr(unsafe.Pointer(quitStr)))
 

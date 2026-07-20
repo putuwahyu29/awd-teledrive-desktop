@@ -258,6 +258,24 @@ export namespace main {
 	        this.resolution = source["resolution"];
 	    }
 	}
+	export class VersionCheckResult {
+	    has_update: boolean;
+	    latest_version: string;
+	    update_url: string;
+	    release_notes: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VersionCheckResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.has_update = source["has_update"];
+	        this.latest_version = source["latest_version"];
+	        this.update_url = source["update_url"];
+	        this.release_notes = source["release_notes"];
+	    }
+	}
 	export class WebShareItem {
 	    id: string;
 	    name: string;

@@ -11,6 +11,7 @@ import (
 	"mime"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -53,7 +54,7 @@ type StorageStats struct {
 }
 
 type progressReader struct {
-	r          *os.File
+	r          io.Reader
 	total      int64
 	fileName   string
 	onProgress func(done, total int64)
@@ -110,6 +111,107 @@ func (a *App) getFolderSize(channelID string) int64 {
 	return size
 }
 
+func (a *App) processMessages(chatIdStr string, messages []tg.MessageClass) []DriveItem {
+	var rawItems []DriveItem
+	metaMap := make(map[string]*SplitMetadata)
+	groupSizes := make(map[string]int64)
+	groupPartCounts := make(map[string]int)
+
+	// First pass: scan messages to extract metadata and sum sizes
+	for _, m := range messages {
+		if msg, ok := m.(*tg.Message); ok {
+			if media, ok := msg.Media.(*tg.MessageMediaDocument); ok {
+				if _, ok := media.Document.(*tg.Document); ok {
+					meta := parseSplitMetadata(msg.Message)
+					if meta != nil {
+						metaMap[meta.GroupID] = meta
+						if doc, ok := media.Document.(*tg.Document); ok {
+							groupSizes[meta.GroupID] += doc.Size
+							groupPartCounts[meta.GroupID]++
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: construct items
+	for _, m := range messages {
+		if msg, ok := m.(*tg.Message); ok {
+			if media, ok := msg.Media.(*tg.MessageMediaDocument); ok {
+				if doc, ok := media.Document.(*tg.Document); ok {
+					name := "document"
+					for _, attr := range doc.Attributes {
+						if filenameAttr, ok := attr.(*tg.DocumentAttributeFilename); ok {
+							name = filenameAttr.FileName
+						}
+					}
+
+					meta := parseSplitMetadata(msg.Message)
+					if meta != nil {
+						// Only show Part 0
+						if meta.PartIndex != 0 {
+							continue
+						}
+						name = meta.OriginalName
+						totalSize := groupSizes[meta.GroupID]
+						if groupPartCounts[meta.GroupID] < meta.TotalParts {
+							missingParts := meta.TotalParts - groupPartCounts[meta.GroupID]
+							totalSize += int64(missingParts) * 2000000000
+						}
+
+						ext := "file"
+						parts := strings.Split(name, ".")
+						if len(parts) > 1 {
+							ext = parts[len(parts)-1]
+						}
+
+						rawItems = append(rawItems, DriveItem{
+							ID:       fmt.Sprintf("%d", msg.ID),
+							Name:     name,
+							Type:     ext,
+							Size:     totalSize,
+							MimeType: doc.MimeType,
+							ParentID: chatIdStr,
+							Date:     int64(msg.Date),
+						})
+					} else {
+						// Normal file
+						ext := "file"
+						parts := strings.Split(name, ".")
+						if len(parts) > 1 {
+							ext = parts[len(parts)-1]
+						}
+						rawItems = append(rawItems, DriveItem{
+							ID:       fmt.Sprintf("%d", msg.ID),
+							Name:     name,
+							Type:     ext,
+							Size:     doc.Size,
+							MimeType: doc.MimeType,
+							ParentID: chatIdStr,
+							Date:     int64(msg.Date),
+						})
+					}
+				}
+			} else if mediaPhoto, ok := msg.Media.(*tg.MessageMediaPhoto); ok {
+				if photo, ok := mediaPhoto.Photo.(*tg.Photo); ok {
+					rawItems = append(rawItems, DriveItem{
+						ID:       fmt.Sprintf("%d", msg.ID),
+						Name:     fmt.Sprintf("Photo_%d.jpg", msg.ID),
+						Type:     "jpg",
+						Size:     0,
+						MimeType: "image/jpeg",
+						ParentID: chatIdStr,
+						Date:     int64(msg.Date),
+					})
+					_ = photo
+				}
+			}
+		}
+	}
+	return rawItems
+}
+
 func (a *App) GetFiles(chatIdStr string) []DriveItem {
 	api := a.getAPI()
 	if api == nil {
@@ -155,6 +257,28 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 				})
 			}
 		}
+
+		// Merge archived and cached channels from config to make sure they remain visible as folders
+		cfg := a.loadConfig()
+		seenFolders := make(map[string]bool)
+		for _, item := range items {
+			if item.Type == "folder" {
+				seenFolders[item.ID] = true
+			}
+		}
+
+		for idStr, cc := range cfg.ChannelCache {
+			if !seenFolders[idStr] {
+				items = append(items, DriveItem{
+					ID:       idStr,
+					Name:     cc.Title,
+					Type:     "folder",
+					Size:     a.getFolderSize(idStr),
+					MimeType: "folder",
+					Date:     time.Now().Unix(),
+				})
+			}
+		}
 	}
 
 	peer := a.getInputPeer(chatIdStr)
@@ -164,48 +288,7 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 	})
 	if err == nil {
 		if msgs, ok := res.(interface{ GetMessages() []tg.MessageClass }); ok {
-			for _, m := range msgs.GetMessages() {
-				if msg, ok := m.(*tg.Message); ok {
-					_ = msg.PeerID
-					if media, ok := msg.Media.(*tg.MessageMediaDocument); ok {
-						if doc, ok := media.Document.(*tg.Document); ok {
-							name := "document"
-							for _, attr := range doc.Attributes {
-								if filenameAttr, ok := attr.(*tg.DocumentAttributeFilename); ok {
-									name = filenameAttr.FileName
-								}
-							}
-							ext := "file"
-							parts := strings.Split(name, ".")
-							if len(parts) > 1 {
-								ext = parts[len(parts)-1]
-							}
-							items = append(items, DriveItem{
-								ID:       fmt.Sprintf("%d", msg.ID),
-								Name:     name,
-								Type:     ext,
-								Size:     doc.Size,
-								MimeType: doc.MimeType,
-								ParentID: chatIdStr,
-								Date:     int64(msg.Date),
-							})
-						}
-					} else if mediaPhoto, ok := msg.Media.(*tg.MessageMediaPhoto); ok {
-						if photo, ok := mediaPhoto.Photo.(*tg.Photo); ok {
-							items = append(items, DriveItem{
-								ID:       fmt.Sprintf("%d", msg.ID),
-								Name:     fmt.Sprintf("Photo_%d.jpg", msg.ID),
-								Type:     "jpg",
-								Size:     0,
-								MimeType: "image/jpeg",
-								ParentID: chatIdStr,
-								Date:     int64(msg.Date),
-							})
-							_ = photo
-						}
-					}
-				}
-			}
+			items = append(items, a.processMessages(chatIdStr, msgs.GetMessages())...)
 		}
 	}
 
@@ -268,50 +351,9 @@ func (a *App) GetFilesPage(chatIdStr string, offsetId int) PageResult {
 	fileCount := 0
 	if err == nil {
 		if msgs, ok := res.(interface{ GetMessages() []tg.MessageClass }); ok {
-			for _, m := range msgs.GetMessages() {
-				if msg, ok := m.(*tg.Message); ok {
-					_ = msg.PeerID
-					if media, ok := msg.Media.(*tg.MessageMediaDocument); ok {
-						if doc, ok := media.Document.(*tg.Document); ok {
-							name := "document"
-							for _, attr := range doc.Attributes {
-								if filenameAttr, ok := attr.(*tg.DocumentAttributeFilename); ok {
-									name = filenameAttr.FileName
-								}
-							}
-							ext := "file"
-							parts := strings.Split(name, ".")
-							if len(parts) > 1 {
-								ext = parts[len(parts)-1]
-							}
-							items = append(items, DriveItem{
-								ID:       fmt.Sprintf("%d", msg.ID),
-								Name:     name,
-								Type:     ext,
-								Size:     doc.Size,
-								MimeType: doc.MimeType,
-								ParentID: chatIdStr,
-								Date:     int64(msg.Date),
-							})
-							fileCount++
-						}
-					} else if mediaPhoto, ok := msg.Media.(*tg.MessageMediaPhoto); ok {
-						if photo, ok := mediaPhoto.Photo.(*tg.Photo); ok {
-							items = append(items, DriveItem{
-								ID:       fmt.Sprintf("%d", msg.ID),
-								Name:     fmt.Sprintf("Photo_%d.jpg", msg.ID),
-								Type:     "jpg",
-								Size:     0,
-								MimeType: "image/jpeg",
-								ParentID: chatIdStr,
-								Date:     int64(msg.Date),
-							})
-							_ = photo
-							fileCount++
-						}
-					}
-				}
-			}
+			pageItems := a.processMessages(chatIdStr, msgs.GetMessages())
+			items = append(items, pageItems...)
+			fileCount = len(msgs.GetMessages())
 		}
 	}
 
@@ -629,7 +671,73 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 	info, _ := f.Stat()
 	fileSize := info.Size()
 
+	peer := a.getInputPeer(currentPath)
 	u := uploader.NewUploader(api).WithThreads(4)
+
+	// If file size exceeds 2GB (2,000,000,000 bytes), upload it as split parts
+	if fileSize > 2000000000 {
+		groupId := generateSplitGroupId()
+		const chunkSize = 2000000000
+		totalParts := int((fileSize + chunkSize - 1) / chunkSize)
+
+		var accumulated int64 = 0
+		for partIndex := 0; partIndex < totalParts; partIndex++ {
+			offset := int64(partIndex) * chunkSize
+			partSize := int64(chunkSize)
+			if offset+partSize > fileSize {
+				partSize = fileSize - offset
+			}
+
+			// Generate caption compatible with Android app
+			caption := fmt.Sprintf("[TD_SPLIT|ID:%s|PART:%d/%d|NAME:%s]", groupId, partIndex, totalParts, fileName)
+
+			// We name each part file name
+			partFileName := fmt.Sprintf("%s.part%d", fileName, partIndex+1)
+
+			sectionReader := io.NewSectionReader(f, offset, partSize)
+			pr := &progressReader{
+				r:          sectionReader,
+				total:      fileSize,
+				fileName:   fileName,
+				done:       accumulated,
+				onProgress: func(done, total int64) {
+					pct := float64(0)
+					if total > 0 {
+						pct = float64(done) / float64(total) * 100
+					}
+					runtime.EventsEmit(a.ctx, "transfer:progress", ProgressEvent{
+						FileName: fileName, Percent: pct,
+					})
+				},
+			}
+
+			upload, err := u.FromReader(a.ctx, partFileName, pr)
+			if err != nil {
+				return map[string]interface{}{"success": false, "error": err.Error()}
+			}
+
+			_, err = api.MessagesSendMedia(a.ctx, &tg.MessagesSendMediaRequest{
+				Peer:     peer,
+				RandomID: rand.Int63(),
+				Message:  caption,
+				Media: &tg.InputMediaUploadedDocument{
+					File:     upload,
+					MimeType: getMimeType(partFileName),
+					Attributes: []tg.DocumentAttributeClass{
+						&tg.DocumentAttributeFilename{FileName: partFileName},
+					},
+				},
+			})
+			if err != nil {
+				return map[string]interface{}{"success": false, "error": err.Error()}
+			}
+
+			accumulated += partSize
+		}
+
+		return map[string]interface{}{"success": true}
+	}
+
 	pr := &progressReader{
 		r:        f,
 		total:    fileSize,
@@ -649,8 +757,6 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 	if err != nil {
 		return map[string]interface{}{"success": false, "error": err.Error()}
 	}
-
-	peer := a.getInputPeer(currentPath)
 
 	_, err = api.MessagesSendMedia(a.ctx, &tg.MessagesSendMediaRequest{
 		Peer: peer,
@@ -745,12 +851,180 @@ func (a *App) getMessageLocation(chatIdStr string, messageIdStr string) (tg.Inpu
 	return nil, fmt.Errorf("no document or photo found in message")
 }
 
+func (a *App) getMessage(chatIdStr string, messageIdStr string) (*tg.Message, error) {
+	api := a.getAPI()
+	if api == nil {
+		return nil, fmt.Errorf("not connected")
+	}
+
+	id, _ := strconv.ParseInt(messageIdStr, 10, 64)
+	peer := a.getInputPeer(chatIdStr)
+
+	var msgs []tg.MessageClass
+	if channel, ok := peer.(*tg.InputPeerChannel); ok {
+		res, err := api.ChannelsGetMessages(a.ctx, &tg.ChannelsGetMessagesRequest{
+			Channel: &tg.InputChannel{
+				ChannelID:  channel.ChannelID,
+				AccessHash: channel.AccessHash,
+			},
+			ID: []tg.InputMessageClass{&tg.InputMessageID{ID: int(id)}},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if m, ok := res.(interface{ GetMessages() []tg.MessageClass }); ok {
+			msgs = m.GetMessages()
+		}
+	} else {
+		res, err := api.MessagesGetMessages(a.ctx, []tg.InputMessageClass{&tg.InputMessageID{ID: int(id)}})
+		if err != nil {
+			return nil, err
+		}
+		if m, ok := res.(interface{ GetMessages() []tg.MessageClass }); ok {
+			msgs = m.GetMessages()
+		}
+	}
+
+	if len(msgs) == 0 {
+		return nil, fmt.Errorf("message not found")
+	}
+
+	msg, ok := msgs[0].(*tg.Message)
+	if !ok {
+		return nil, fmt.Errorf("invalid message type")
+	}
+	return msg, nil
+}
+
 func (a *App) DownloadFile(currentPath string, fileID string, fileName string, fileSize int64) map[string]interface{} {
 	api := a.getAPI()
 	if api == nil {
 		return map[string]interface{}{"success": false, "error": "not connected"}
 	}
 
+	// Check if this is a split file by retrieving the main message
+	msg, err := a.getMessage(currentPath, fileID)
+	if err == nil && msg != nil {
+		meta := parseSplitMetadata(msg.Message)
+		if meta != nil {
+			// Split file path
+			peer := a.getInputPeer(currentPath)
+			var parts []*tg.Message
+			offsetID := 0
+
+			// Fetch history paginated to collect all parts of this split file
+			for len(parts) < meta.TotalParts {
+				resHistory, err := api.MessagesGetHistory(a.ctx, &tg.MessagesGetHistoryRequest{
+					Peer:     peer,
+					Limit:    100,
+					OffsetID: offsetID,
+				})
+				if err != nil {
+					break
+				}
+				msgsObj, ok := resHistory.(interface{ GetMessages() []tg.MessageClass })
+				if !ok || len(msgsObj.GetMessages()) == 0 {
+					break
+				}
+
+				foundNew := false
+				for _, m := range msgsObj.GetMessages() {
+					if historyMsg, ok := m.(*tg.Message); ok {
+						offsetID = historyMsg.ID
+						foundNew = true
+
+						partMeta := parseSplitMetadata(historyMsg.Message)
+						if partMeta != nil && partMeta.GroupID == meta.GroupID {
+							alreadyAdded := false
+							for _, p := range parts {
+								if p.ID == historyMsg.ID {
+									alreadyAdded = true
+									break
+								}
+							}
+							if !alreadyAdded {
+								parts = append(parts, historyMsg)
+							}
+						}
+					}
+				}
+				if !foundNew {
+					break
+				}
+			}
+
+			// Sort parts by PartIndex
+			sort.Slice(parts, func(i, j int) bool {
+				metaI := parseSplitMetadata(parts[i].Message)
+				metaJ := parseSplitMetadata(parts[j].Message)
+				if metaI != nil && metaJ != nil {
+					return metaI.PartIndex < metaJ.PartIndex
+				}
+				return false
+			})
+
+			if len(parts) > 0 {
+				var totalSplitSize int64 = 0
+				for _, p := range parts {
+					if media, ok := p.Media.(*tg.MessageMediaDocument); ok {
+						if doc, ok := media.Document.(*tg.Document); ok {
+							totalSplitSize += doc.Size
+						}
+					}
+				}
+
+				savePath, _ := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+					DefaultFilename: fileName,
+					Title:           "Save File As",
+				})
+				if savePath == "" {
+					return map[string]interface{}{"success": false, "error": "cancelled"}
+				}
+
+				f, err := os.Create(savePath)
+				if err != nil {
+					return map[string]interface{}{"success": false, "error": err.Error()}
+				}
+				defer f.Close()
+
+				d := downloader.NewDownloader()
+				pw := &progressWriter{
+					w:        f,
+					total:    totalSplitSize,
+					fileName: fileName,
+					onProgress: func(done, total int64) {
+						pct := float64(0)
+						if total > 0 {
+							pct = float64(done) / float64(total) * 100
+						}
+						runtime.EventsEmit(a.ctx, "transfer:progress", ProgressEvent{
+							FileName: fileName, Percent: pct,
+						})
+					},
+				}
+
+				for _, p := range parts {
+					if media, ok := p.Media.(*tg.MessageMediaDocument); ok {
+						if doc, ok := media.Document.(*tg.Document); ok {
+							loc := &tg.InputDocumentFileLocation{
+								ID:            doc.ID,
+								AccessHash:    doc.AccessHash,
+								FileReference: doc.FileReference,
+							}
+							_, err = d.Download(api, loc).Stream(a.ctx, pw)
+							if err != nil {
+								return map[string]interface{}{"success": false, "error": err.Error()}
+							}
+						}
+					}
+				}
+
+				return map[string]interface{}{"success": true}
+			}
+		}
+	}
+
+	// Fallback to normal download
 	loc, err := a.getMessageLocation(currentPath, fileID)
 	if err != nil {
 		return map[string]interface{}{"success": false, "error": err.Error()}
@@ -772,8 +1046,8 @@ func (a *App) DownloadFile(currentPath string, fileID string, fileName string, f
 	defer f.Close()
 
 	pw := &progressWriter{
-		w: f,
-		total: fileSize,
+		w:        f,
+		total:    fileSize,
 		fileName: fileName,
 		onProgress: func(done, total int64) {
 			pct := float64(0)
@@ -2005,3 +2279,47 @@ func getMimeType(fileName string) string {
 		return "application/octet-stream"
 	}
 }
+
+type SplitMetadata struct {
+	GroupID      string
+	PartIndex    int
+	TotalParts   int
+	OriginalName string
+}
+
+func parseSplitMetadata(caption string) *SplitMetadata {
+	if !strings.HasPrefix(caption, "[TD_SPLIT|") || !strings.HasSuffix(caption, "]") {
+		return nil
+	}
+	content := strings.TrimPrefix(caption, "[TD_SPLIT|")
+	content = strings.TrimSuffix(content, "]")
+	parts := strings.Split(content, "|")
+
+	meta := &SplitMetadata{}
+	for _, p := range parts {
+		if strings.HasPrefix(p, "ID:") {
+			meta.GroupID = strings.TrimPrefix(p, "ID:")
+		} else if strings.HasPrefix(p, "PART:") {
+			partStr := strings.TrimPrefix(p, "PART:")
+			subParts := strings.Split(partStr, "/")
+			if len(subParts) == 2 {
+				meta.PartIndex, _ = strconv.Atoi(subParts[0])
+				meta.TotalParts, _ = strconv.Atoi(subParts[1])
+			}
+		} else if strings.HasPrefix(p, "NAME:") {
+			meta.OriginalName = strings.TrimPrefix(p, "NAME:")
+		}
+	}
+	return meta
+}
+
+func generateSplitGroupId() string {
+	const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	var sb strings.Builder
+	for i := 0; i < 8; i++ {
+		sb.WriteByte(chars[r.Intn(len(chars))])
+	}
+	return sb.String()
+}
+

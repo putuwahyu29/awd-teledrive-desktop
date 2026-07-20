@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Plus, Home, Star, Image as ImageIcon, Camera, RefreshCw, 
-  Clock, Share2, Cloud, Upload, FolderPlus 
+  Clock, Share2, Cloud, Upload, FolderPlus, Info
 } from 'lucide-react';
 import { fmtBytes } from '../../utils/format';
 
@@ -146,6 +146,7 @@ export default function FileManagerSidebar({
           { key: 'sync',    icon: <RefreshCw size={20}/>, label: t.syncActivity, action: () => navTo('sync') },
           { key: 'recent',  icon: <Clock size={20}/>,     label: t.recent,       action: () => navTo('recent') },
           { key: 'webshare', icon: <Share2 size={20}/>,     label: t.webShare,     action: () => navTo('webshare') },
+          { key: 'changelog', icon: <Info size={20}/>,     label: lang === 'id' ? 'Tentang & Pembaruan' : 'About & Changelog', action: () => navTo('changelog') },
         ].map(item => {
           const isActive = activeMenu === item.key;
           return (

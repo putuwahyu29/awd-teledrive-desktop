@@ -42,6 +42,7 @@ import FileManagerHeader from './features/FileManagerHeader';
 import StorageAnalytics from './features/StorageAnalytics';
 import SyncManager from './features/SyncManager';
 import RecentActivity from './features/RecentActivity';
+import ChangelogView from './features/ChangelogView';
 
 export default function FileManager({ onLogout }: { onLogout: () => void }) {
   const saved = (k: string, fallback: any) => { 
@@ -223,6 +224,10 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
     const unsubSync = EventsOn('sync:activity', (ev: any) => {
       setSyncActivities(p => ({ ...p, [ev.name]: ev }));
     });
+    const unsubNavigate = EventsOn('menu:navigate', (menu: string) => {
+      setActiveMenu(menu);
+      setCurrentFolder(null);
+    });
 
     // Drag & drop from desktop via Wails OnFileDrop
     OnFileDrop((x: number, y: number, paths: string[]) => {
@@ -252,6 +257,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
     return () => {
       unsub && unsub();
       unsubSync && unsubSync();
+      unsubNavigate && unsubNavigate();
       document.removeEventListener('contextmenu', blockCtx);
       OnFileDropOff();
     };
@@ -1110,6 +1116,8 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
             <TelephotoGallery />
           ) : activeMenu === 'webshare' ? (
             <WebShareManagement lang={lang} addToast={addToast} />
+          ) : activeMenu === 'changelog' ? (
+            <ChangelogView lang={lang} />
           ) : activeMenu === 'recent' ? (
             <RecentActivity recentFiles={recentFiles} t={t} lang={lang} />
           ) : activeMenu === 'sync' ? (
