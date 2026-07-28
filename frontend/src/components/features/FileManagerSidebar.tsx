@@ -118,7 +118,7 @@ export default function FileManagerSidebar({
           >
             {[
               { icon: <Upload size={18}/>, label: t.uploadFile, action: () => { setNewMenuOpen(false); doUpload(); } },
-              ...(activeMenu === 'drive' && currentFolder === null
+              ...(activeMenu === 'drive'
                 ? [{ icon: <FolderPlus size={18}/>, label: t.newFolder, action: () => { setNewMenuOpen(false); setShowNewFolder(true); } }]
                 : []),
             ].map((item, i) => (

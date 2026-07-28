@@ -16,7 +16,7 @@ import {
   GetFilesPage,
   GetShareLink,
   AddRecentFile, ClearRecentFiles, GetRecentFiles,
-  GetSettings,
+  GetSettings, ExportManifest, ImportManifest,
   GetStorageStats,
   CreateWebShare, GetWebShares, DeleteWebShare, GetLocalIPAddress, GetWebServerPort, GetTunnelPublicUrl, IsTunnelRunning,
 } from '../../wailsjs/go/main/App';
@@ -84,6 +84,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
 
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderType, setNewFolderType] = useState<'virtual' | 'channel'>('virtual');
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState<any>(null);
   const [showMove, setShowMove] = useState<any>(null);
@@ -316,7 +317,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
       if (showNewFolder || showSettings || showMove || showRename || showInfo || confirmDlg) return;
 
       if (e.ctrlKey && e.key === 'u') { e.preventDefault(); doUpload(); }
-      if (e.ctrlKey && e.key === 'n') { e.preventDefault(); if (!currentFolder) setShowNewFolder(true); }
+      if (e.ctrlKey && e.key === 'n') { e.preventDefault(); setShowNewFolder(true); }
       if (e.ctrlKey && e.key === 'f') {
         e.preventDefault();
         (document.querySelector('input[placeholder]') as HTMLElement | null)?.focus();
@@ -443,7 +444,13 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
     e.preventDefault();
     if (!newFolderName.trim()) return;
     try { 
-      await CreateFolder('', newFolderName.trim()); 
+      const dest = currentFolder ? String(currentFolder.id) : '';
+      const folderTypeToUse = currentFolder !== null ? 'virtual' : newFolderType;
+      const r = await CreateFolder(dest, newFolderName.trim(), folderTypeToUse); 
+      if (r && r.error) {
+        addToast(r.error, 'error');
+        return;
+      }
       addToast(t.folderCreatedToast); 
       setShowNewFolder(false); 
       setNewFolderName(''); 
@@ -819,7 +826,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
   const ctxItems = (file: any) => {
     if (!file) {
       const menuItems = [];
-      if (currentFolder === null) {
+      if (activeMenu === 'drive') {
         menuItems.push({ icon: <FolderPlus size={16}/>, label: t.newFolder, action: () => { setShowNewFolder(true); setCtxMenu(null); } });
       }
       menuItems.push({ icon: <Upload size={16}/>, label: t.uploadFile, action: () => { doUpload(); setCtxMenu(null); } });
@@ -1613,8 +1620,59 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
       <Modal open={showNewFolder} onClose={() => setShowNewFolder(false)} title={t.newFolder}
         actions={<><BtnTonal onClick={() => setShowNewFolder(false)}>{t.cancel}</BtnTonal><BtnFill onClick={doCreateFolder}>{t.create}</BtnFill></>}
       >
-        <form onSubmit={doCreateFolder} style={{ paddingBottom: 8 }}>
+        <form onSubmit={doCreateFolder} style={{ paddingBottom: 8, display: 'flex', flexDirection: 'column', gap: 16 }}>
           <FieldInput label={t.folderName} value={newFolderName} onChange={e => setNewFolderName(e.target.value)} autofocus/>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--md-on-surface-variant)', display: 'block', marginBottom: 8 }}>
+              {lang === 'id' ? 'Tipe Folder' : 'Folder Type'}
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div 
+                onClick={() => setNewFolderType('virtual')}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: newFolderType === 'virtual' || currentFolder !== null ? '2px solid var(--md-primary, #00639b)' : '1px solid var(--md-outline-variant, #ccc)',
+                  background: newFolderType === 'virtual' || currentFolder !== null ? 'var(--md-primary-container, #e0f2fe)' : 'transparent',
+                  cursor: 'pointer',
+                  fontSize: 13
+                }}
+              >
+                <div style={{ fontWeight: 600, color: 'var(--md-on-surface, #1f2937)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  📁 {lang === 'id' ? 'Folder Cloud' : 'Cloud Folder'}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>
+                  {lang === 'id' ? 'Tersimpan di Pesan Tersimpan & mendukung sub-folder' : 'Stored in Saved Messages & supports sub-folders'}
+                </div>
+              </div>
+              <div 
+                onClick={() => {
+                  if (currentFolder === null) setNewFolderType('channel');
+                }}
+                style={{
+                  flex: 1,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: newFolderType === 'channel' && currentFolder === null ? '2px solid var(--md-primary, #00639b)' : '1px solid var(--md-outline-variant, #ccc)',
+                  background: newFolderType === 'channel' && currentFolder === null ? 'var(--md-primary-container, #e0f2fe)' : 'transparent',
+                  opacity: currentFolder !== null ? 0.4 : 1,
+                  cursor: currentFolder !== null ? 'not-allowed' : 'pointer',
+                  fontSize: 13
+                }}
+                title={currentFolder !== null ? (lang === 'id' ? 'Channel Terpisah hanya dapat dibuat di Root' : 'Dedicated Channel can only be created at Root') : ''}
+              >
+                <div style={{ fontWeight: 600, color: 'var(--md-on-surface, #1f2937)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  📢 {lang === 'id' ? 'Channel Terpisah' : 'Dedicated Channel'}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2, lineHeight: 1.3 }}>
+                  {currentFolder !== null 
+                    ? (lang === 'id' ? 'Hanya dapat dibuat di Root' : 'Only available at Root')
+                    : (lang === 'id' ? 'Membuat Channel Telegram baru khusus' : 'Create a new separate Telegram Channel')}
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </Modal>
 
@@ -2109,6 +2167,71 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <RefreshCw size={14}/> {t.clearCacheBtn}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--md-outline-variant)', paddingTop: 16 }}>
+            <div style={{ marginBottom: 10 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--md-on-surface)', marginBottom: 2 }}>
+                {lang === 'id' ? 'Cadangan Metadata' : 'Metadata Backup'}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--md-on-surface-variant)' }}>
+                {lang === 'id' 
+                  ? 'Ekspor atau impor struktur folder & pemetaan file (.json)' 
+                  : 'Export or import folder structure & file mappings (.json)'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={async () => {
+                  try {
+                    const r = await ExportManifest();
+                    if (r && r.success) {
+                      addToast(lang === 'id' ? 'Cadangan Metadata berhasil diekspor!' : 'Metadata backup exported successfully!');
+                    } else if (r && r.error && r.error !== 'Batal menyimpan file') {
+                      addToast(r.error, 'error');
+                    }
+                  } catch (e) { addToast(String(e), 'error'); }
+                }}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 100,
+                  border: '1px solid var(--md-outline-variant)',
+                  background: 'transparent', color: 'var(--md-on-surface)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'background .15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Download size={14}/> {lang === 'id' ? 'Ekspor Cadangan' : 'Export Backup'}
+              </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    const r = await ImportManifest();
+                    if (r && r.success) {
+                      addToast(lang === 'id' ? 'Cadangan Metadata berhasil dipulihkan!' : 'Metadata backup restored successfully!');
+                      fetchFiles();
+                    } else if (r && r.error && r.error !== 'Batal memilih file') {
+                      addToast(r.error, 'error');
+                    }
+                  } catch (e) { addToast(String(e), 'error'); }
+                }}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 100,
+                  border: '1px solid var(--md-outline-variant)',
+                  background: 'transparent', color: 'var(--md-on-surface)',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  transition: 'background .15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <Upload size={14}/> {lang === 'id' ? 'Impor Cadangan' : 'Import Backup'}
               </button>
             </div>
           </div>

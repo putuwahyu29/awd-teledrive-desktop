@@ -18,7 +18,7 @@ export function ClearRecentFiles():Promise<Record<string, any>>;
 
 export function ClearTelephotoCache():Promise<Record<string, any>>;
 
-export function CreateFolder(arg1:string,arg2:string):Promise<Record<string, any>>;
+export function CreateFolder(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
 
 export function CreateWebShare(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number,arg6:string,arg7:string):Promise<main.WebShareItem>;
 
@@ -31,6 +31,8 @@ export function DownloadFile(arg1:string,arg2:string,arg3:string,arg4:number):Pr
 export function DownloadFolder(arg1:string,arg2:string):Promise<Record<string, any>>;
 
 export function DownloadTelephotoFile(arg1:string,arg2:string,arg3:string,arg4:number,arg5:boolean,arg6:string):Promise<Record<string, any>>;
+
+export function ExportManifest():Promise<Record<string, any>>;
 
 export function GetAPICredentials():Promise<main.AppConfig>;
 
@@ -73,6 +75,8 @@ export function GetTunnelPublicUrl():Promise<string>;
 export function GetWebServerPort():Promise<number>;
 
 export function GetWebShares():Promise<Array<main.WebShareItem>>;
+
+export function ImportManifest():Promise<Record<string, any>>;
 
 export function ImportTelephotoBackup(arg1:string,arg2:string):Promise<Array<main.TelephotoMediaItem>>;
 

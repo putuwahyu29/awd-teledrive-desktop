@@ -34,8 +34,8 @@ export function ClearTelephotoCache() {
   return window['go']['main']['App']['ClearTelephotoCache']();
 }
 
-export function CreateFolder(arg1, arg2) {
-  return window['go']['main']['App']['CreateFolder'](arg1, arg2);
+export function CreateFolder(arg1, arg2, arg3) {
+  return window['go']['main']['App']['CreateFolder'](arg1, arg2, arg3);
 }
 
 export function CreateWebShare(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
@@ -60,6 +60,10 @@ export function DownloadFolder(arg1, arg2) {
 
 export function DownloadTelephotoFile(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['DownloadTelephotoFile'](arg1, arg2, arg3, arg4, arg5, arg6);
+}
+
+export function ExportManifest() {
+  return window['go']['main']['App']['ExportManifest']();
 }
 
 export function GetAPICredentials() {
@@ -144,6 +148,10 @@ export function GetWebServerPort() {
 
 export function GetWebShares() {
   return window['go']['main']['App']['GetWebShares']();
+}
+
+export function ImportManifest() {
+  return window['go']['main']['App']['ImportManifest']();
 }
 
 export function ImportTelephotoBackup(arg1, arg2) {

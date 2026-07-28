@@ -38,6 +38,9 @@ type App struct {
 	channelCache map[int64]*tg.InputPeerChannel
 	cacheMu      sync.RWMutex
 
+	manifestCache *TeleDriveManifest
+	manifestMu    sync.RWMutex
+
 	sessionPath    string
 	configPath     string
 	authPhone      string
