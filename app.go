@@ -152,7 +152,7 @@ func (a *App) LogDebug(msg string) {
 	fmt.Println("[FRONTEND ERROR]", msg)
 }
 
-const AppVersion = "1.1.0"
+const AppVersion = "1.2.0"
 
 type VersionCheckResult struct {
 	HasUpdate     bool   `json:"has_update"`

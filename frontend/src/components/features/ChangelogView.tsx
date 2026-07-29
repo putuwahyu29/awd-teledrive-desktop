@@ -52,7 +52,7 @@ export default function ChangelogView({ lang }: ChangelogViewProps) {
               : 'Desktop application to use Telegram as unlimited cloud storage.'}
           </p>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: 13, color: 'var(--md-on-surface-variant)' }}>
-            <span>{lang === 'id' ? 'Versi saat ini: 1.1.0' : 'Current version: 1.1.0'}</span>
+            <span>{lang === 'id' ? 'Versi saat ini: 1.2.0' : 'Current version: 1.2.0'}</span>
             <span style={{ height: 4, width: 4, borderRadius: '50%', background: 'var(--md-outline)' }}></span>
             <span>© 2026 Awd TeleDrive</span>
           </div>

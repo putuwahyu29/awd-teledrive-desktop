@@ -223,8 +223,8 @@ function App() {
 
             <p style={{ fontSize: '14px', lineHeight: '1.6', color: 'var(--on-surface-variant, #49454f)', margin: 0 }}>
               {lang === 'id' 
-                ? `Versi baru (${updateInfo.latest_version}) telah dirilis. Versi Anda saat ini adalah 1.1.0.`
-                : `A new version (${updateInfo.latest_version}) is available. Your current version is 1.1.0.`}
+                ? `Versi baru (${updateInfo.latest_version}) telah dirilis. Versi Anda saat ini adalah 1.2.0.`
+                : `A new version (${updateInfo.latest_version}) is available. Your current version is 1.2.0.`}
             </p>
 
             {updateInfo.release_notes && (

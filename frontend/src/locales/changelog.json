@@ -1,5 +1,27 @@
 [
   {
+    "version": "1.2.0",
+    "date": "2026-07-29",
+    "title": {
+      "id": "Folder Virtual Android, Virtual Drive & Web Share",
+      "en": "Android Virtual Folder Interoperability, Virtual Drive & Web Share"
+    },
+    "changes": {
+      "id": [
+        "Integrasi Tag Metadata Folder Virtual [VF:] yang 100% kompatibel dengan Awd TeleDrive Android.",
+        "Fitur Virtual Drive / WebDAV Mounting langsung ke File Explorer Windows (OS Drive Letter).",
+        "Fitur Web Share Internal & Public Tunneling untuk berbagi file lokal maupun Telegram secara mudah.",
+        "Peningkatan stabilitas render UI, perbaikan error JavaScript startup, dan optimasi performa."
+      ],
+      "en": [
+        "Full Virtual Folder [VF:] metadata tag integration 100% compatible with Awd TeleDrive Android.",
+        "Virtual Drive / WebDAV Mounting support directly to Windows File Explorer (OS Drive Letter).",
+        "Internal Web Share & Public Tunneling features to easily share local and Telegram files.",
+        "Improved UI rendering stability, fixed startup JavaScript errors, and performance optimizations."
+      ]
+    }
+  },
+  {
     "version": "1.1.0",
     "date": "2026-07-21",
     "title": {
