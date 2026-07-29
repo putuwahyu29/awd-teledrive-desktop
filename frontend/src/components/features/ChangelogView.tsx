@@ -43,7 +43,7 @@ export default function ChangelogView({ lang }: ChangelogViewProps) {
         borderRadius: 24, padding: 24, display: 'flex', alignItems: 'center', gap: 20,
         boxShadow: '0 1px 3px rgba(0,0,0,0.05)', flexWrap: 'wrap'
       }}>
-        <img src="/icon.webp" alt="Awd TeleDrive" style={{ width: 80, height: 80, borderRadius: 16, objectFit: 'contain' }} />
+        <img src="/logo-drive.png" onError={(e) => { (e.target as HTMLImageElement).src = '/icon.webp'; }} alt="Awd TeleDrive" style={{ width: 80, height: 80, borderRadius: 16, objectFit: 'contain' }} />
         <div style={{ flex: 1, minWidth: 200 }}>
           <h3 style={{ margin: '0 0 4px 0', fontSize: 22, color: 'var(--md-on-surface)' }}>Awd TeleDrive</h3>
           <p style={{ margin: '0 0 8px 0', fontSize: 14, color: 'var(--md-on-surface-variant)' }}>

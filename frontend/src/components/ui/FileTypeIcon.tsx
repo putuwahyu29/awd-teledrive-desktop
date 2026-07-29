@@ -5,14 +5,24 @@ import { fileColor } from '../../utils/fileHelpers';
 
 interface FileTypeIconProps {
   file: {
+    id?: string;
     type?: string;
+    mimeType?: string;
     name?: string;
   };
   size?: number;
 }
 
 export function FileTypeIcon({ file, size = 32 }: FileTypeIconProps) {
-  if (file.type === 'folder') return <Folder size={size} fill="#fbbc04" color="#f9a825"/>;
+  if (file.type === 'folder' || file.mimeType === 'virtual_folder' || (file.id && String(file.id).startsWith('vf_'))) {
+    const isVirtual = file.mimeType === 'virtual_folder' || (file.id && String(file.id).startsWith('vf_'));
+    if (isVirtual) {
+      // Yellow / Gold for Virtual Folders
+      return <Folder size={size} fill="#fbbc04" color="#d97706"/>;
+    }
+    // Blue for Telegram Channel Folders
+    return <Folder size={size} fill="#3b82f6" color="#1d4ed8"/>;
+  }
   const e = (file.name || '').split('.').pop()?.toLowerCase() || '';
   const c = fileColor(file.name || '');
   if (['jpg','jpeg','png','gif','webp','heic','heif'].includes(e)) return <ImageIcon size={size} color={c}/>;

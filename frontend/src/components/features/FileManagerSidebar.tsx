@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Plus, Home, Star, Image as ImageIcon, Camera, RefreshCw, 
-  Clock, Share2, Cloud, Upload, FolderPlus, Info
+  Clock, Share2, Cloud, Upload, FolderPlus, Info, HardDrive, Settings as SettingsIcon
 } from 'lucide-react';
 import { fmtBytes } from '../../utils/format';
 
@@ -58,7 +58,7 @@ export default function FileManagerSidebar({
           width: '100%'
         }}
       >
-        <img src="/icon.webp" alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 8 }}/>
+        <img src="/logo-drive.png" onError={(e) => { (e.target as HTMLImageElement).src = '/icon.webp'; }} alt="Awd TeleDrive" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 8 }}/>
         {!sidebarCollapsed && (
           <span style={{ fontFamily: 'Google Sans,sans-serif', fontSize: 18, fontWeight: 600, color: 'var(--md-on-surface)', whiteSpace: 'nowrap' }}>
             Awd TeleDrive
@@ -116,12 +116,16 @@ export default function FileManagerSidebar({
               overflow: 'hidden', animation: 'gdAnim .2s cubic-bezier(0.2, 0, 0, 1)',
             }}
           >
-            {[
-              { icon: <Upload size={18}/>, label: t.uploadFile, action: () => { setNewMenuOpen(false); doUpload(); } },
-              ...(activeMenu === 'drive'
-                ? [{ icon: <FolderPlus size={18}/>, label: t.newFolder, action: () => { setNewMenuOpen(false); setShowNewFolder(true); } }]
-                : []),
-            ].map((item, i) => (
+            {(() => {
+              const isChannelFolder = currentFolder && (currentFolder.type === 'folder' || currentFolder.mimeType === 'folder') && currentFolder.mimeType !== 'virtual_folder' && !String(currentFolder.id || '').startsWith('vf_');
+              const allowNewFolder = activeMenu === 'drive' && !isChannelFolder;
+              return [
+                { icon: <Upload size={18}/>, label: t.uploadFile, action: () => { setNewMenuOpen(false); doUpload(); } },
+                ...(allowNewFolder
+                  ? [{ icon: <FolderPlus size={18}/>, label: t.newFolder, action: () => { setNewMenuOpen(false); setShowNewFolder(true); } }]
+                  : []),
+              ];
+            })().map((item, i) => (
               <div 
                 key={i} 
                 onClick={item.action}
@@ -143,9 +147,9 @@ export default function FileManagerSidebar({
           { key: 'starred', icon: <Star size={20}/>,      label: t.starred, action: () => navTo('starred') },
           { key: 'media',   icon: <ImageIcon size={20}/>, label: t.media,   action: () => navTo('media') },
           { key: 'telephoto', icon: <Camera size={20}/>,   label: t.telephoto,   action: () => navTo('telephoto') },
-          { key: 'sync',    icon: <RefreshCw size={20}/>, label: t.syncActivity, action: () => navTo('sync') },
           { key: 'recent',  icon: <Clock size={20}/>,     label: t.recent,       action: () => navTo('recent') },
           { key: 'webshare', icon: <Share2 size={20}/>,     label: t.webShare,     action: () => navTo('webshare') },
+          { key: 'settings', icon: <SettingsIcon size={20}/>, label: lang === 'id' ? 'Pengaturan' : 'Settings', action: () => navTo('settings') },
           { key: 'changelog', icon: <Info size={20}/>,     label: lang === 'id' ? 'Tentang & Pembaruan' : 'About & Changelog', action: () => navTo('changelog') },
         ].map(item => {
           const isActive = activeMenu === item.key;

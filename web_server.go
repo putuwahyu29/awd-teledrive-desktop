@@ -23,6 +23,9 @@ import (
 //go:embed icon.webp
 var iconWebpBytes []byte
 
+//go:embed logo-drive.png
+var logoDrivePngBytes []byte
+
 type WebShareItem struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -111,6 +114,7 @@ func (ws *WebServer) Start() error {
 	mux.HandleFunc("/download/", ws.handleDownload)
 	mux.HandleFunc("/download_batch/", ws.handleBatchDownload)
 	mux.HandleFunc("/local-temp/", ws.handleLocalTemp)
+	mux.HandleFunc("/logo-drive.png", ws.handleLogoDrive)
 	mux.HandleFunc("/icon.webp", ws.handleIcon)
 	mux.HandleFunc("/", ws.handleIndex)
 

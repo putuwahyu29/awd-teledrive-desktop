@@ -20,10 +20,20 @@ func (ws *WebServer) generateID() string {
 	return hex.EncodeToString(b)[:12]
 }
 
-func (ws *WebServer) handleIcon(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "image/webp")
+func (ws *WebServer) handleLogoDrive(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Cache-Control", "public, max-age=86400")
-	w.Write(iconWebpBytes)
+	w.Write(logoDrivePngBytes)
+}
+
+func (ws *WebServer) handleIcon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "public, max-age=86400")
+	if len(logoDrivePngBytes) > 0 {
+		w.Write(logoDrivePngBytes)
+	} else {
+		w.Write(iconWebpBytes)
+	}
 }
 
 func (ws *WebServer) handleShare(w http.ResponseWriter, r *http.Request) {

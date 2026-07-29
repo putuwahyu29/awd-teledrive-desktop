@@ -52,6 +52,8 @@ export function GetLocalIPAddress():Promise<string>;
 
 export function GetMediaFiles():Promise<Array<main.DriveItem>>;
 
+export function GetMountedVirtualDrives():Promise<Array<main.MountedDriveInfo>>;
+
 export function GetRecentFiles():Promise<Array<main.RecentItem>>;
 
 export function GetSettings():Promise<Record<string, any>>;
@@ -72,6 +74,8 @@ export function GetTotalSize():Promise<number>;
 
 export function GetTunnelPublicUrl():Promise<string>;
 
+export function GetVirtualDriveStatus():Promise<main.VirtualDriveStatus>;
+
 export function GetWebServerPort():Promise<number>;
 
 export function GetWebShares():Promise<Array<main.WebShareItem>>;
@@ -89,6 +93,8 @@ export function LogDebug(arg1:string):Promise<void>;
 export function Login(arg1:string,arg2:string):Promise<Record<string, any>>;
 
 export function Logout():Promise<Record<string, any>>;
+
+export function MountVirtualDrive(arg1:string,arg2:string):Promise<main.MountedDriveInfo>;
 
 export function MoveFile(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
 
@@ -110,6 +116,8 @@ export function QuitApp():Promise<void>;
 
 export function ReadCachedImageBase64(arg1:string,arg2:string):Promise<string>;
 
+export function RefreshFiles():Promise<Record<string, any>>;
+
 export function RemoveSyncTask(arg1:string):Promise<Record<string, any>>;
 
 export function RenameFile(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
@@ -128,6 +136,8 @@ export function SendFileDirectly(arg1:string,arg2:string,arg3:string):Promise<Re
 
 export function SetAPICredentials(arg1:string,arg2:string):Promise<Record<string, any>>;
 
+export function SetAutoMountOnStartup(arg1:boolean,arg2:string):Promise<void>;
+
 export function SetMinimizeToTray(arg1:boolean):Promise<void>;
 
 export function SetStartup(arg1:boolean):Promise<Record<string, any>>;
@@ -140,15 +150,21 @@ export function ShowWindow():Promise<void>;
 
 export function StartAutoBackup(arg1:string,arg2:string):Promise<Record<string, any>>;
 
+export function StartNativeWebDAVServer(arg1:number,arg2:string):Promise<string>;
+
 export function StartQRLogin():Promise<Record<string, any>>;
 
 export function StopAutoBackup():Promise<Record<string, any>>;
+
+export function StopNativeWebDAVServer():Promise<void>;
 
 export function TogglePublicTunnel(arg1:boolean):Promise<string>;
 
 export function ToggleStar(arg1:main.DriveItem):Promise<boolean>;
 
 export function ToggleSyncTask(arg1:string,arg2:boolean):Promise<Record<string, any>>;
+
+export function UnmountVirtualDrive(arg1:string):Promise<void>;
 
 export function UploadFile(arg1:string,arg2:string):Promise<Record<string, any>>;
 

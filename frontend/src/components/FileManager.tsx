@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Folder, Trash2, ChevronRight, List, Info, 
   FolderOutput, X, Check, AlertCircle, Monitor, Power, 
-  RefreshCw, Eye, EyeOff, Copy, Link, Link2Off, Menu, MoreVertical, Pencil, Send,
+  RefreshCw, RotateCw, Eye, EyeOff, Copy, Link, Link2Off, Menu, MoreVertical, Pencil, Send,
   Download, Star, Share2, FolderPlus, Upload
 } from 'lucide-react';
 import {
@@ -25,6 +25,8 @@ import { EventsOn, OnFileDrop, OnFileDropOff } from '../../wailsjs/runtime/runti
 import PreviewModal from './PreviewModal';
 import WebShareManagement from './WebShareManagement';
 import TelephotoGallery from './TelephotoGallery';
+import VirtualDriveManagement from './VirtualDriveManagement';
+import SettingsManagement from './SettingsManagement';
 
 // Import refactored modules
 import { fmtBytes } from '../utils/format';
@@ -143,6 +145,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
   const [startupEnabled, setStartupEnabled] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [viewMode, setViewModeRaw] = useState<'grid' | 'list'>(() => saved('td_viewMode', 'grid'));
   const setViewMode = (v: 'grid' | 'list' | ((p: 'grid' | 'list') => 'grid' | 'list')) => {
     setViewModeRaw(prev => {
@@ -317,7 +320,11 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
       if (showNewFolder || showSettings || showMove || showRename || showInfo || confirmDlg) return;
 
       if (e.ctrlKey && e.key === 'u') { e.preventDefault(); doUpload(); }
-      if (e.ctrlKey && e.key === 'n') { e.preventDefault(); setShowNewFolder(true); }
+      if (e.ctrlKey && e.key === 'n') {
+        e.preventDefault();
+        const isChannelFolder = currentFolder && (currentFolder.type === 'folder' || currentFolder.mimeType === 'folder') && currentFolder.mimeType !== 'virtual_folder' && !String(currentFolder.id || '').startsWith('vf_');
+        if (!isChannelFolder) setShowNewFolder(true);
+      }
       if (e.ctrlKey && e.key === 'f') {
         e.preventDefault();
         (document.querySelector('input[placeholder]') as HTMLElement | null)?.focus();
@@ -346,7 +353,10 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
     try {
       let r;
       if (activeMenu === 'starred') r = await GetStarredFiles();
-      else if (activeMenu === 'media') r = await GetMediaFiles();
+      else if (activeMenu === 'media') {
+        const rawMedia = (await GetMediaFiles()) || [];
+        r = rawMedia.filter((f: any) => !f.name?.toLowerCase().endsWith('.enc') && f.type !== 'enc');
+      }
       else if (activeMenu === 'drive') {
         const page = await GetFilesPage(currentFolder ? String(currentFolder.id) : '', 0);
         r = page.items || [];
@@ -356,6 +366,22 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
       setFiles(r || []);
     } catch (e) { addToast(String(e), 'error'); }
     finally { setLoading(false); }
+  };
+
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      if ((window as any).go?.main?.App?.RefreshFiles) {
+        await (window as any).go.main.App.RefreshFiles();
+      }
+      await fetchFiles();
+      addToast(lang === 'id' ? 'Data berhasil disinkronkan dengan Telegram ✓' : 'Data successfully synced with Telegram ✓');
+    } catch (e) {
+      addToast(String(e), 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const doShareLink = async (file: any) => {
@@ -826,7 +852,8 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
   const ctxItems = (file: any) => {
     if (!file) {
       const menuItems = [];
-      if (activeMenu === 'drive') {
+      const isChannelFolder = currentFolder && (currentFolder.type === 'folder' || currentFolder.mimeType === 'folder') && currentFolder.mimeType !== 'virtual_folder' && !String(currentFolder.id || '').startsWith('vf_');
+      if (activeMenu === 'drive' && !isChannelFolder) {
         menuItems.push({ icon: <FolderPlus size={16}/>, label: t.newFolder, action: () => { setShowNewFolder(true); setCtxMenu(null); } });
       }
       menuItems.push({ icon: <Upload size={16}/>, label: t.uploadFile, action: () => { doUpload(); setCtxMenu(null); } });
@@ -923,12 +950,23 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
           }
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 14px 16px', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '14px 12px 14px 16px', gap: 6 }}>
           <span style={{
             fontSize: 15, fontWeight: 500, flex: 1,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             color: 'var(--md-on-surface)',
           }}>{file.name}</span>
+          {(file.type === 'folder' || file.mimeType === 'virtual_folder') && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6,
+              background: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? 'rgba(251,188,4,0.15)' : 'rgba(59,130,246,0.15)',
+              color: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? '#d97706' : '#3b82f6',
+              border: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? '1px solid rgba(251,188,4,0.35)' : '1px solid rgba(59,130,246,0.3)',
+              textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0
+            }}>
+              {(file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? 'Virtual' : 'Channel'}
+            </span>
+          )}
           <button
             onClick={e => {
               e.stopPropagation();
@@ -1046,6 +1084,8 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
           showConfirm={showConfirm}
           closeConfirm={closeConfirm}
           onLogout={onLogout}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
         />
 
         {/* Content Scroll Area */}
@@ -1095,10 +1135,24 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                     : activeMenu === 'recent' ? t.recent 
                     : activeMenu === 'analytics' ? t.storageAnalytics 
                     : activeMenu === 'webshare' ? (lang === 'id' ? 'Berbagi Web' : 'Web Sharing') 
-                    : activeMenu === 'telephoto' ? t.telephoto 
+                    : activeMenu === 'mountdrive' ? (lang === 'id' ? 'Mount Virtual Drive' : 'Mount Virtual Drive')
+                    : activeMenu === 'settings' ? (lang === 'id' ? 'Pengaturan' : 'Settings')
                     : t.searchResults}
                 </h2>
               )}
+              <button
+                onClick={handleRefresh}
+                title={lang === 'id' ? 'Sinkronkan / Refresh Data' : 'Sync / Refresh Data'}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--md-on-surface-variant)', marginLeft: 6, transition: 'background .15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <RotateCw size={17} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />
+              </button>
             </div>
             {activeMenu === 'recent' && recentFiles.length > 0 && (
               <button
@@ -1127,10 +1181,18 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
             <ChangelogView lang={lang} />
           ) : activeMenu === 'recent' ? (
             <RecentActivity recentFiles={recentFiles} t={t} lang={lang} />
-          ) : activeMenu === 'sync' ? (
-            <SyncManager
+          ) : (activeMenu === 'settings' || activeMenu === 'sync' || activeMenu === 'mountdrive') ? (
+            <SettingsManagement
               lang={lang}
+              setLang={setLang}
               t={t}
+              startupEnabled={startupEnabled}
+              setStartupEnabled={setStartupEnabled}
+              minimizeToTray={minimizeToTray}
+              setMinimizeToTray={setMinimizeToTray}
+              addToast={addToast}
+              fetchFiles={fetchFiles}
+              initialTab={activeMenu === 'sync' ? 'sync' : activeMenu === 'mountdrive' ? 'mountdrive' : 'general'}
               backupActive={backupActive}
               setBackupActive={setBackupActive}
               syncTasks={syncTasks}
@@ -1146,7 +1208,6 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
               availableFolders={availableFolders}
               currentFolder={currentFolder}
               syncActivities={syncActivities}
-              addToast={addToast}
               showConfirm={showConfirm}
               closeConfirm={closeConfirm}
             />
@@ -1271,7 +1332,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                                     {isSel && <Check size={16} color="var(--md-on-primary)" strokeWidth={3}/>}
                                   </div>
                                 ) : (
-                                  <Folder size={26} fill="#fbbc04" color="#f9a825" style={{ flexShrink: 0 }}/>
+                                  <FileTypeIcon file={folder} size={26}/>
                                 )}
                                 <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--md-on-surface)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{folder.name}</span>
                               </div>
@@ -1338,7 +1399,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                                     {isSel && <Check size={16} color="var(--md-on-primary)" strokeWidth={3}/>}
                                   </div>
                                 ) : (
-                                  <Folder size={26} fill="#fbbc04" color="#f9a825" style={{ flexShrink: 0 }}/>
+                                  <FileTypeIcon file={folder} size={26}/>
                                 )}
                                 <span style={{ fontSize: 16, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--md-on-surface)' }}>{folder.name}</span>
                                 <span style={{ fontSize: 14, color: 'var(--md-on-surface-variant)' }}>{folder.size > 0 ? fmtBytes(folder.size) : '0 B'}</span>
@@ -1460,6 +1521,17 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                                       <FileTypeIcon file={file} size={26}/>
                                     )}
                                     <span style={{ fontSize: 16, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--md-on-surface)' }}>{file.name}</span>
+                                    {(file.type === 'folder' || file.mimeType === 'virtual_folder') && (
+                                      <span style={{
+                                        fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                                        background: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? 'rgba(251,188,4,0.15)' : 'rgba(59,130,246,0.15)',
+                                        color: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? '#d97706' : '#3b82f6',
+                                        border: (file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? '1px solid rgba(251,188,4,0.35)' : '1px solid rgba(59,130,246,0.3)',
+                                        textTransform: 'uppercase', letterSpacing: 0.5, marginRight: 8, flexShrink: 0
+                                      }}>
+                                        {(file.mimeType === 'virtual_folder' || String(file.id).startsWith('vf_')) ? 'Virtual' : 'Channel'}
+                                      </span>
+                                    )}
                                     <span style={{ fontSize: 14, color: 'var(--md-on-surface-variant)' }}>{fmtBytes(file.size)}</span>
                                     <button onClick={e => { e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); setCtxMenu(isCtx ? null : { file, x: r.right, y: r.bottom + 6 }); }}
                                       style={{ width: 26, height: 26, borderRadius: '50%', border: 'none', background: isCtx ? 'var(--md-surface-container-highest)' : 'transparent',
@@ -2047,219 +2119,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
         )}
       </Modal>
 
-      {/* Settings Modal */}
-      <Modal open={showSettings} onClose={() => setShowSettings(false)} title={t.settings} width={480}
-        actions={<BtnTonal onClick={() => setShowSettings(false)}>{t.close}</BtnTonal>}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontWeight: 500, fontSize: 14, color: 'var(--md-on-surface)' }}>{t.language}</span>
-            <select value={lang} onChange={e => setLang(e.target.value)} style={{
-              padding: '8px 12px', borderRadius: 8, border: '1.5px solid var(--md-outline)',
-              background: 'var(--md-surface-container)', color: 'var(--md-on-surface)', fontSize: 14, outline: 'none', cursor: 'pointer',
-            }}>
-              <option value="en">English</option>
-              <option value="id">Bahasa Indonesia</option>
-            </select>
-          </div>
 
-          <div style={{ borderTop: '1px solid var(--md-outline-variant)', paddingTop: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <Monitor size={16} color="var(--md-primary)"/>
-              <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--md-on-surface)' }}>
-                {t.system}
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--md-on-surface)', marginBottom: 2 }}>
-                  {t.startWithWindows}
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--md-on-surface-variant)' }}>
-                  {t.launchOnLogin}
-                </p>
-              </div>
-              <button
-                onClick={async () => {
-                  const next = !startupEnabled;
-                  const r = await SetStartup(next);
-                  if (r.success) {
-                    setStartupEnabled(next);
-                    addToast(next ? t.startupEnabled : t.startupDisabled);
-                  } else {
-                    addToast(r.error || 'Gagal', 'error');
-                  }
-                }}
-                style={{
-                  width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                  background: startupEnabled ? 'var(--md-primary)' : 'var(--md-surface-variant)',
-                  position: 'relative', flexShrink: 0, transition: 'background .2s',
-                }}
-              >
-                <div style={{
-                  width: 20, height: 20, borderRadius: '50%', background: 'white',
-                  position: 'absolute', top: 3,
-                  left: startupEnabled ? 25 : 3,
-                  transition: 'left .2s',
-                  boxShadow: '0 1px 4px rgba(0,0,0,.2)',
-                }}/>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--md-on-surface)', marginBottom: 2 }}>
-                  {t.minimizeToTray}
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--md-on-surface-variant)' }}>
-                  {t.minimizeToTrayDesc}
-                </p>
-              </div>
-              <button
-                onClick={async () => {
-                  const next = !minimizeToTray;
-                  setMinimizeToTray(next);
-                  await SetMinimizeToTray(next);
-                  addToast(next ? t.minimizeEnabled : t.minimizeDisabled);
-                }}
-                style={{
-                  width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-                  background: minimizeToTray ? 'var(--md-primary)' : 'var(--md-surface-variant)',
-                  position: 'relative', flexShrink: 0, transition: 'background .2s',
-                }}
-              >
-                <div style={{
-                  width: 20, height: 20, borderRadius: '50%', background: 'white',
-                  position: 'absolute', top: 3,
-                  left: minimizeToTray ? 25 : 3,
-                  transition: 'left .2s',
-                  boxShadow: '0 1px 4px rgba(0,0,0,.2)',
-                }}/>
-              </button>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--md-outline-variant)', paddingTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--md-on-surface)', marginBottom: 2 }}>{t.clearCache}</p>
-                <p style={{ fontSize: 12, color: 'var(--md-on-surface-variant)' }}>
-                  {t.clearThumbCache}
-                </p>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    const r = await ClearCache();
-                    addToast(r.message || (t.cacheCleared));
-                  } catch (e) { addToast(String(e), 'error'); }
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 100,
-                  border: '1px solid var(--md-outline-variant)',
-                  background: 'transparent', color: 'var(--md-on-surface)',
-                  fontSize: 13, fontWeight: 500, cursor: 'pointer', flexShrink: 0,
-                  transition: 'background .15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <RefreshCw size={14}/> {t.clearCacheBtn}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--md-outline-variant)', paddingTop: 16 }}>
-            <div style={{ marginBottom: 10 }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--md-on-surface)', marginBottom: 2 }}>
-                {lang === 'id' ? 'Cadangan Metadata' : 'Metadata Backup'}
-              </p>
-              <p style={{ fontSize: 12, color: 'var(--md-on-surface-variant)' }}>
-                {lang === 'id' 
-                  ? 'Ekspor atau impor struktur folder & pemetaan file (.json)' 
-                  : 'Export or import folder structure & file mappings (.json)'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={async () => {
-                  try {
-                    const r = await ExportManifest();
-                    if (r && r.success) {
-                      addToast(lang === 'id' ? 'Cadangan Metadata berhasil diekspor!' : 'Metadata backup exported successfully!');
-                    } else if (r && r.error && r.error !== 'Batal menyimpan file') {
-                      addToast(r.error, 'error');
-                    }
-                  } catch (e) { addToast(String(e), 'error'); }
-                }}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 100,
-                  border: '1px solid var(--md-outline-variant)',
-                  background: 'transparent', color: 'var(--md-on-surface)',
-                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                  transition: 'background .15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <Download size={14}/> {lang === 'id' ? 'Ekspor Cadangan' : 'Export Backup'}
-              </button>
-
-              <button
-                onClick={async () => {
-                  try {
-                    const r = await ImportManifest();
-                    if (r && r.success) {
-                      addToast(lang === 'id' ? 'Cadangan Metadata berhasil dipulihkan!' : 'Metadata backup restored successfully!');
-                      fetchFiles();
-                    } else if (r && r.error && r.error !== 'Batal memilih file') {
-                      addToast(r.error, 'error');
-                    }
-                  } catch (e) { addToast(String(e), 'error'); }
-                }}
-                style={{
-                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  padding: '8px 14px', borderRadius: 100,
-                  border: '1px solid var(--md-outline-variant)',
-                  background: 'transparent', color: 'var(--md-on-surface)',
-                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                  transition: 'background .15s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <Upload size={14}/> {lang === 'id' ? 'Impor Cadangan' : 'Import Backup'}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ borderTop: '1px solid var(--md-outline-variant)', paddingTop: 16 }}>
-            <button
-              onClick={() => showConfirm(
-                t.quitAppTitle,
-                t.quitAppMsg,
-                () => { closeConfirm(); QuitApp(); },
-                false,
-              )}
-              style={{
-                width: '100%', padding: '10px', borderRadius: 100,
-                border: '1px solid var(--md-error)',
-                background: 'transparent', color: 'var(--md-error)',
-                fontSize: 14, fontWeight: 500, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                transition: 'background .15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(179,38,30,.08)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
-            >
-              <Power size={15}/> {t.quitAppBtn}
-            </button>
-          </div>
-        </div>
-      </Modal>
 
       {previewFile && (() => {
         const previewableFiles = files.filter(f => f.type !== 'folder');

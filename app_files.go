@@ -104,6 +104,47 @@ type TeleDriveManifest struct {
 
 const ManifestPrefix = "#TELEDRIVE_MANIFEST"
 
+func (a *App) getLocalManifestPath() string {
+	userConfig, err := os.UserConfigDir()
+	if err != nil {
+		return ""
+	}
+	dir := filepath.Join(userConfig, "teledrive")
+	_ = os.MkdirAll(dir, 0755)
+	return filepath.Join(dir, "manifest.json")
+}
+
+func (a *App) saveLocalManifest(manifest *TeleDriveManifest) {
+	path := a.getLocalManifestPath()
+	if path == "" {
+		return
+	}
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err == nil {
+		_ = os.WriteFile(path, data, 0644)
+	}
+}
+
+func (a *App) loadLocalManifest() *TeleDriveManifest {
+	path := a.getLocalManifestPath()
+	if path != "" {
+		data, err := os.ReadFile(path)
+		if err == nil {
+			var m TeleDriveManifest
+			if err := json.Unmarshal(data, &m); err == nil {
+				if m.VirtualFolders == nil {
+					m.VirtualFolders = make(map[string]VirtualFolder)
+				}
+				if m.FileMappings == nil {
+					m.FileMappings = make(map[string]string)
+				}
+				return &m
+			}
+		}
+	}
+	return nil
+}
+
 func (a *App) loadCloudManifest() *TeleDriveManifest {
 	a.manifestMu.RLock()
 	if a.manifestCache != nil {
@@ -112,14 +153,17 @@ func (a *App) loadCloudManifest() *TeleDriveManifest {
 	}
 	a.manifestMu.RUnlock()
 
-	api := a.getAPI()
-	manifest := &TeleDriveManifest{
-		Version:        1,
-		VirtualFolders: make(map[string]VirtualFolder),
-		FileMappings:   make(map[string]string),
-		UpdatedAt:      time.Now().Unix(),
+	manifest := a.loadLocalManifest()
+	if manifest == nil {
+		manifest = &TeleDriveManifest{
+			Version:        1,
+			VirtualFolders: make(map[string]VirtualFolder),
+			FileMappings:   make(map[string]string),
+			UpdatedAt:      time.Now().Unix(),
+		}
 	}
 
+	api := a.getAPI()
 	if api == nil {
 		return manifest
 	}
@@ -138,13 +182,26 @@ func (a *App) loadCloudManifest() *TeleDriveManifest {
 						jsonStr = strings.TrimSpace(jsonStr)
 						var mData TeleDriveManifest
 						if err := json.Unmarshal([]byte(jsonStr), &mData); err == nil {
+							if mData.VirtualFolders == nil {
+								mData.VirtualFolders = make(map[string]VirtualFolder)
+							}
+							if mData.FileMappings == nil {
+								mData.FileMappings = make(map[string]string)
+							}
+							// Merge cloud manifest with local manifest
+							for k, v := range manifest.VirtualFolders {
+								if _, exists := mData.VirtualFolders[k]; !exists {
+									mData.VirtualFolders[k] = v
+								}
+							}
+							for k, v := range manifest.FileMappings {
+								if _, exists := mData.FileMappings[k]; !exists {
+									mData.FileMappings[k] = v
+								}
+							}
+
 							manifest = &mData
-							if manifest.VirtualFolders == nil {
-								manifest.VirtualFolders = make(map[string]VirtualFolder)
-							}
-							if manifest.FileMappings == nil {
-								manifest.FileMappings = make(map[string]string)
-							}
+							a.saveLocalManifest(manifest)
 							break
 						}
 					}
@@ -160,9 +217,14 @@ func (a *App) loadCloudManifest() *TeleDriveManifest {
 }
 
 func (a *App) saveCloudManifest(manifest *TeleDriveManifest) error {
+	a.saveLocalManifest(manifest)
+	a.manifestMu.Lock()
+	a.manifestCache = manifest
+	a.manifestMu.Unlock()
+
 	api := a.getAPI()
 	if api == nil {
-		return fmt.Errorf("not connected")
+		return nil
 	}
 
 	manifest.UpdatedAt = time.Now().Unix()
@@ -204,12 +266,6 @@ func (a *App) saveCloudManifest(manifest *TeleDriveManifest) error {
 			Message:  msgContent,
 			RandomID: rand.Int63(),
 		})
-	}
-
-	if err == nil {
-		a.manifestMu.Lock()
-		a.manifestCache = manifest
-		a.manifestMu.Unlock()
 	}
 
 	return err
@@ -282,7 +338,17 @@ func (a *App) processMessages(chatIdStr string, messages []tg.MessageClass) []Dr
 			if isSavedMessages && manifest != nil {
 				mappedParent := manifest.FileMappings[msgIDStr]
 				if mappedParent == "" {
-					mappedParent = "0"
+					vfTag := parseVFTag(msg.Message)
+					if vfTag != "" {
+						mappedParent = vfTag
+						if manifest.FileMappings == nil {
+							manifest.FileMappings = make(map[string]string)
+						}
+						manifest.FileMappings[msgIDStr] = vfTag
+						_ = a.saveCloudManifest(manifest)
+					} else {
+						mappedParent = "0"
+					}
 				}
 				if targetParent == "0" {
 					if mappedParent != "0" {
@@ -370,9 +436,29 @@ func (a *App) processMessages(chatIdStr string, messages []tg.MessageClass) []Dr
 }
 
 func (a *App) GetFiles(chatIdStr string) []DriveItem {
+	targetParent := chatIdStr
+	if targetParent == "" || targetParent == "/" {
+		targetParent = "0"
+	}
+
 	api := a.getAPI()
 	if api == nil {
-		return []DriveItem{}
+		items := []DriveItem{}
+		manifest := a.loadCloudManifest()
+		for _, vf := range manifest.VirtualFolders {
+			if vf.ParentID == targetParent || (targetParent == "0" && (vf.ParentID == "" || vf.ParentID == "0")) {
+				items = append(items, DriveItem{
+					ID:       vf.ID,
+					Name:     vf.Name,
+					Type:     "folder",
+					Size:     0,
+					MimeType: "virtual_folder",
+					ParentID: vf.ParentID,
+					Date:     vf.CreatedAt,
+				})
+			}
+		}
+		return items
 	}
 
 	items := []DriveItem{}
@@ -435,6 +521,21 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 					Date:     time.Now().Unix(),
 				})
 			}
+		}
+	}
+
+	manifest := a.loadCloudManifest()
+	for _, vf := range manifest.VirtualFolders {
+		if vf.ParentID == targetParent || (targetParent == "0" && (vf.ParentID == "" || vf.ParentID == "0")) {
+			items = append(items, DriveItem{
+				ID:       vf.ID,
+				Name:     vf.Name,
+				Type:     "folder",
+				Size:     0,
+				MimeType: "virtual_folder",
+				ParentID: vf.ParentID,
+				Date:     vf.CreatedAt,
+			})
 		}
 	}
 
@@ -622,11 +723,19 @@ func (a *App) CreateFolder(currentPath string, folderName string, folderType str
 		if manifest.VirtualFolders == nil {
 			manifest.VirtualFolders = make(map[string]VirtualFolder)
 		}
-		vfID := fmt.Sprintf("vf_%d", time.Now().UnixNano())
 		parent := currentPath
 		if parent == "" || parent == "/" {
 			parent = "0"
 		}
+
+		// Prevent duplicate Virtual Folders with same name in same parent
+		for _, existingVF := range manifest.VirtualFolders {
+			if strings.EqualFold(existingVF.Name, folderName) && (existingVF.ParentID == parent || (parent == "0" && (existingVF.ParentID == "" || existingVF.ParentID == "0"))) {
+				return map[string]interface{}{"success": true, "id": existingVF.ID}
+			}
+		}
+
+		vfID := fmt.Sprintf("vf_%d", time.Now().UnixNano())
 		manifest.VirtualFolders[vfID] = VirtualFolder{
 			ID:        vfID,
 			Name:      folderName,
@@ -638,7 +747,7 @@ func (a *App) CreateFolder(currentPath string, folderName string, folderType str
 		if err != nil {
 			return map[string]interface{}{"success": false, "error": "Gagal menyimpan Virtual Folder ke Cloud: " + err.Error()}
 		}
-		return map[string]interface{}{"success": true}
+		return map[string]interface{}{"success": true, "id": vfID}
 	}
 
 	api := a.getAPI()
@@ -959,6 +1068,9 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 
 			// Generate caption compatible with Android app
 			caption := fmt.Sprintf("[TD_SPLIT|ID:%s|PART:%d/%d|NAME:%s]", groupId, partIndex, totalParts, fileName)
+			if strings.HasPrefix(currentPath, "vf_") {
+				caption = fmt.Sprintf("%s [VF:%s]", caption, currentPath)
+			}
 
 			// We name each part file name
 			partFileName := fmt.Sprintf("%s.part%d", fileName, partIndex+1)
@@ -1039,9 +1151,15 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 		return map[string]interface{}{"success": false, "error": err.Error()}
 	}
 
+	var caption string
+	if strings.HasPrefix(currentPath, "vf_") {
+		caption = fmt.Sprintf("%s [VF:%s]", fileName, currentPath)
+	}
+
 	resMedia, err := api.MessagesSendMedia(a.ctx, &tg.MessagesSendMediaRequest{
-		Peer: peer,
+		Peer:     peer,
 		RandomID: rand.Int63(),
+		Message:  caption,
 		Media: &tg.InputMediaUploadedDocument{
 			File:     upload,
 			MimeType: getMimeType(fileName),
@@ -2130,13 +2248,34 @@ func (a *App) ShowNotification(title string, message string) {
 	})
 }
 
+// isPrivateChannelOrSaved returns true if chatIdStr represents Saved Messages, a Virtual Folder, or a Private Broadcast Channel.
+func (a *App) isPrivateChannelOrSaved(chatIdStr string) bool {
+	if chatIdStr == "0" || chatIdStr == "" || strings.HasPrefix(chatIdStr, "vf_") {
+		return true
+	}
+	id, err := strconv.ParseInt(chatIdStr, 10, 64)
+	if err != nil {
+		return false
+	}
+	a.cacheMu.RLock()
+	defer a.cacheMu.RUnlock()
+	if _, ok := a.channelCache[id]; ok {
+		return true
+	}
+	return false
+}
+
 func (a *App) GetMediaFiles() []DriveItem {
 	fmt.Println("GetMediaFiles started")
-	folders := a.GetFiles("")
+	folders := a.GetFiles("0")
 	fmt.Println("Root items found:", len(folders))
 	items := []DriveItem{}
 	
-	isMedia := func(ext string) bool {
+	isMedia := func(ext string, name string) bool {
+		nameLower := strings.ToLower(name)
+		if strings.HasSuffix(nameLower, ".enc") || strings.ToLower(ext) == "enc" {
+			return false
+		}
 		ext = strings.ToLower(ext)
 		for _, e := range []string{"jpg", "jpeg", "png", "gif", "webp", "mp4", "webm", "ogg", "mov", "heic", "heif"} {
 			if ext == e {
@@ -2147,17 +2286,17 @@ func (a *App) GetMediaFiles() []DriveItem {
 	}
 
 	for _, f := range folders {
-		if f.Type != "folder" && isMedia(f.Type) {
+		if f.Type != "folder" && f.MimeType != "virtual_folder" && isMedia(f.Type, f.Name) {
 			items = append(items, f)
 		}
 	}
 
 	for _, f := range folders {
-		if f.Type == "folder" {
+		if (f.Type == "folder" || f.MimeType == "virtual_folder") && a.isPrivateChannelOrSaved(f.ID) {
 			subFiles := a.GetFiles(f.ID)
 			fmt.Printf("Folder %s has %d items\n", f.Name, len(subFiles))
 			for _, sf := range subFiles {
-				if sf.Type != "folder" && isMedia(sf.Type) {
+				if sf.Type != "folder" && sf.MimeType != "virtual_folder" && isMedia(sf.Type, sf.Name) {
 					items = append(items, sf)
 				}
 			}
@@ -2280,10 +2419,16 @@ func (a *App) RenameFile(chatIdStr string, fileIdStr string, newName string) map
 		return map[string]interface{}{"success": false, "error": "upload failed: " + err.Error()}
 	}
 
+	var caption string
+	if strings.HasPrefix(chatIdStr, "vf_") {
+		caption = fmt.Sprintf("%s [VF:%s]", newName, chatIdStr)
+	}
+
 	peer := a.getInputPeer(chatIdStr)
 	_, err = api.MessagesSendMedia(a.ctx, &tg.MessagesSendMediaRequest{
 		Peer:     peer,
 		RandomID: rand.Int63(),
+		Message:  caption,
 		Media: &tg.InputMediaUploadedDocument{
 			File:     upload,
 			MimeType: getMimeType(newName),
@@ -2611,10 +2756,16 @@ type SplitMetadata struct {
 }
 
 func parseSplitMetadata(caption string) *SplitMetadata {
-	if !strings.HasPrefix(caption, "[TD_SPLIT|") || !strings.HasSuffix(caption, "]") {
+	if !strings.HasPrefix(caption, "[TD_SPLIT|") {
 		return nil
 	}
-	content := strings.TrimPrefix(caption, "[TD_SPLIT|")
+	start := strings.Index(caption, "[TD_SPLIT|")
+	end := strings.Index(caption[start:], "]")
+	if end == -1 {
+		return nil
+	}
+	splitBlock := caption[start : start+end+1]
+	content := strings.TrimPrefix(splitBlock, "[TD_SPLIT|")
 	content = strings.TrimSuffix(content, "]")
 	parts := strings.Split(content, "|")
 
@@ -2634,6 +2785,17 @@ func parseSplitMetadata(caption string) *SplitMetadata {
 		}
 	}
 	return meta
+}
+
+func parseVFTag(caption string) string {
+	if strings.Contains(caption, "[VF:") {
+		start := strings.Index(caption, "[VF:") + 4
+		end := strings.Index(caption[start:], "]")
+		if end != -1 {
+			return strings.TrimSpace(caption[start : start+end])
+		}
+	}
+	return ""
 }
 
 func generateSplitGroupId() string {
@@ -2707,6 +2869,16 @@ func (a *App) ImportManifest() map[string]interface{} {
 		return map[string]interface{}{"success": false, "error": "Gagal menyelaraskan cadangan ke Cloud Telegram: " + err.Error()}
 	}
 
+	return map[string]interface{}{"success": true}
+}
+
+// RefreshFiles invalidates local channel caches and re-synces Cloud Manifest from Telegram.
+func (a *App) RefreshFiles() map[string]interface{} {
+	a.cacheMu.Lock()
+	a.channelCache = make(map[int64]*tg.InputPeerChannel)
+	a.cacheMu.Unlock()
+
+	_ = a.loadCloudManifest()
 	return map[string]interface{}{"success": true}
 }
 

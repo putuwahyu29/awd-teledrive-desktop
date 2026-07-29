@@ -59,12 +59,8 @@ export default function SyncManager({
       addToast(lang === 'id' ? 'Pilih folder lokal terlebih dahulu' : 'Select a local folder first', 'error');
       return;
     }
-    if (!newBackupDest) {
-      addToast(lang === 'id' ? 'Isi ID Folder tujuan' : 'Enter Destination Folder ID', 'error');
-      return;
-    }
     try {
-      const r = await AddSyncTask(newBackupFolder, newBackupDest);
+      const r = await AddSyncTask(newBackupFolder, newBackupDest || "");
       if (r.success) {
         addToast(lang === 'id' ? 'Tugas sinkronisasi ditambahkan ✓' : 'Sync task added ✓');
         setNewBackupFolder('');
@@ -340,32 +336,6 @@ export default function SyncManager({
             >
               Browse
             </BtnTonal>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-              <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--md-on-surface-variant)' }}>
-                {lang === 'id' ? 'Folder Tujuan (Cloud)' : 'Destination Folder (Cloud)'}
-              </label>
-              <select
-                value={newBackupDest}
-                onChange={e => setNewBackupDest(e.target.value)}
-                style={{
-                  width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid var(--md-outline)',
-                  background: 'var(--md-surface-container)', color: 'var(--md-on-surface)',
-                  fontSize: 13, outline: 'none', cursor: 'pointer', height: 40,
-                }}
-              >
-                <option value="">{lang === 'id' ? '-- Pilih Folder --' : '-- Select Folder --'}</option>
-                {availableFolders.map(f => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
-            {currentFolder && (
-              <BtnTonal onClick={() => setNewBackupDest(String(currentFolder.id))} style={{ height: 40, whiteSpace: 'nowrap' }}>
-                {lang === 'id' ? 'Gunakan Aktif' : 'Use Active'}
-              </BtnTonal>
-            )}
           </div>
           <BtnFill onClick={doAddSyncTask} style={{ width: '100%', marginTop: 4, height: 40 }}>
             {lang === 'id' ? 'Tambah ke Sinkronisasi' : 'Add to Sync'}

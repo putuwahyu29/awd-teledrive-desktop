@@ -50,17 +50,20 @@ type App struct {
 	dispatcher *tg.UpdateDispatcher
 	qrCancel   context.CancelFunc
 	qrMu       sync.Mutex
-	webServer  *WebServer
-	quitting   bool
+	webServer       *WebServer
+	virtualDriveMgr *NativeVirtualDriveManager
+	quitting        bool
 }
 
 func NewApp() *App {
 	disp := tg.NewUpdateDispatcher()
-	return &App{
+	app := &App{
 		connectedCh:  make(chan struct{}),
 		channelCache: make(map[int64]*tg.InputPeerChannel),
 		dispatcher:   &disp,
 	}
+	app.virtualDriveMgr = NewNativeVirtualDriveManager(app)
+	return app
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -101,6 +104,16 @@ func (a *App) startup(ctx context.Context) {
 			a.StartAutoBackup(cfg.BackupFolder, cfg.BackupDestChatId)
 		}()
 	}
+
+	// Auto mount virtual drive on app startup
+	go func() {
+		time.Sleep(2 * time.Second)
+		letter := cfg.AutoMountLetter
+		if letter == "" {
+			letter = "Z:"
+		}
+		_, _ = a.MountVirtualDrive("0", letter)
+	}()
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -109,6 +122,9 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 	if a.webServer != nil {
 		a.webServer.Stop()
+	}
+	if a.virtualDriveMgr != nil {
+		_ = a.StopNativeWebDAVServer()
 	}
 }
 

@@ -102,6 +102,10 @@ export function GetMediaFiles() {
   return window['go']['main']['App']['GetMediaFiles']();
 }
 
+export function GetMountedVirtualDrives() {
+  return window['go']['main']['App']['GetMountedVirtualDrives']();
+}
+
 export function GetRecentFiles() {
   return window['go']['main']['App']['GetRecentFiles']();
 }
@@ -142,6 +146,10 @@ export function GetTunnelPublicUrl() {
   return window['go']['main']['App']['GetTunnelPublicUrl']();
 }
 
+export function GetVirtualDriveStatus() {
+  return window['go']['main']['App']['GetVirtualDriveStatus']();
+}
+
 export function GetWebServerPort() {
   return window['go']['main']['App']['GetWebServerPort']();
 }
@@ -176,6 +184,10 @@ export function Login(arg1, arg2) {
 
 export function Logout() {
   return window['go']['main']['App']['Logout']();
+}
+
+export function MountVirtualDrive(arg1, arg2) {
+  return window['go']['main']['App']['MountVirtualDrive'](arg1, arg2);
 }
 
 export function MoveFile(arg1, arg2, arg3) {
@@ -218,6 +230,10 @@ export function ReadCachedImageBase64(arg1, arg2) {
   return window['go']['main']['App']['ReadCachedImageBase64'](arg1, arg2);
 }
 
+export function RefreshFiles() {
+  return window['go']['main']['App']['RefreshFiles']();
+}
+
 export function RemoveSyncTask(arg1) {
   return window['go']['main']['App']['RemoveSyncTask'](arg1);
 }
@@ -254,6 +270,10 @@ export function SetAPICredentials(arg1, arg2) {
   return window['go']['main']['App']['SetAPICredentials'](arg1, arg2);
 }
 
+export function SetAutoMountOnStartup(arg1, arg2) {
+  return window['go']['main']['App']['SetAutoMountOnStartup'](arg1, arg2);
+}
+
 export function SetMinimizeToTray(arg1) {
   return window['go']['main']['App']['SetMinimizeToTray'](arg1);
 }
@@ -278,12 +298,20 @@ export function StartAutoBackup(arg1, arg2) {
   return window['go']['main']['App']['StartAutoBackup'](arg1, arg2);
 }
 
+export function StartNativeWebDAVServer(arg1, arg2) {
+  return window['go']['main']['App']['StartNativeWebDAVServer'](arg1, arg2);
+}
+
 export function StartQRLogin() {
   return window['go']['main']['App']['StartQRLogin']();
 }
 
 export function StopAutoBackup() {
   return window['go']['main']['App']['StopAutoBackup']();
+}
+
+export function StopNativeWebDAVServer() {
+  return window['go']['main']['App']['StopNativeWebDAVServer']();
 }
 
 export function TogglePublicTunnel(arg1) {
@@ -296,6 +324,10 @@ export function ToggleStar(arg1) {
 
 export function ToggleSyncTask(arg1, arg2) {
   return window['go']['main']['App']['ToggleSyncTask'](arg1, arg2);
+}
+
+export function UnmountVirtualDrive(arg1) {
+  return window['go']['main']['App']['UnmountVirtualDrive'](arg1);
 }
 
 export function UploadFile(arg1, arg2) {

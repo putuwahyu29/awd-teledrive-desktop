@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Menu, Search, X, ArrowUpDown, Check, Download, FolderOutput, 
-  Star, Trash2, List, LayoutGrid, Sun, Moon, Settings as SettingsIcon, LogOut 
+  Star, Trash2, List, LayoutGrid, Sun, Moon, Settings as SettingsIcon, LogOut, RotateCw 
 } from 'lucide-react';
 import { Logout } from '../../../wailsjs/go/main/App';
 
@@ -34,6 +34,8 @@ interface FileManagerHeaderProps {
   showConfirm: (title: string, message: string, onConfirm: () => void, danger?: boolean) => void;
   closeConfirm: () => void;
   onLogout: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export default function FileManagerHeader({
@@ -64,7 +66,9 @@ export default function FileManagerHeader({
   setShowSettings,
   showConfirm,
   closeConfirm,
-  onLogout
+  onLogout,
+  onRefresh,
+  isRefreshing
 }: FileManagerHeaderProps) {
   const [sortOpen, setSortOpen] = useState(false);
 
@@ -251,9 +255,14 @@ export default function FileManagerHeader({
         {(() => {
           const showLayoutToggle = ['drive', 'starred', 'recent'].includes(activeMenu);
           const headerButtons = [
-            ...(showLayoutToggle ? [{ icon: viewMode === 'grid' ? <List size={20}/> : <LayoutGrid size={20}/>, action: () => setViewMode(v => v === 'grid' ? 'list' : 'grid') }] : []),
-            { icon: dark ? <Sun size={20}/> : <Moon size={20}/>, action: () => setDark(d => !d) },
-            { icon: <SettingsIcon size={20}/>, action: () => setShowSettings(true) },
+            ...(onRefresh ? [{ 
+              icon: <RotateCw size={19} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />, 
+              action: onRefresh, 
+              title: lang === 'id' ? 'Sinkronkan / Refresh Data' : 'Sync / Refresh Data' 
+            }] : []),
+            ...(showLayoutToggle ? [{ icon: viewMode === 'grid' ? <List size={20}/> : <LayoutGrid size={20}/>, action: () => setViewMode(v => v === 'grid' ? 'list' : 'grid'), title: viewMode === 'grid' ? 'List View' : 'Grid View' }] : []),
+            { icon: dark ? <Sun size={20}/> : <Moon size={20}/>, action: () => setDark(d => !d), title: dark ? 'Light Mode' : 'Dark Mode' },
+            { icon: <SettingsIcon size={20}/>, action: () => navTo('settings'), title: t.settings },
             {
               icon: <LogOut size={20}/>,
               action: () => showConfirm(
@@ -273,6 +282,7 @@ export default function FileManagerHeader({
             <button 
               key={i} 
               onClick={btn.action} 
+              title={(btn as any).title}
               style={{
                 width: 40, height: 40, borderRadius: '50%', border: 'none', cursor: 'pointer',
                 background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',

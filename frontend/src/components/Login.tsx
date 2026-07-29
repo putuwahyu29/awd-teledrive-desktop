@@ -325,7 +325,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
         <div className="banner-content">
           <img
-            src="/icon.webp"
+            src="/logo-drive.png"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/icon.webp'; }}
             alt="Awd TeleDrive"
             className="banner-logo"
           />

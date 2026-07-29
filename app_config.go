@@ -21,6 +21,8 @@ type AppConfig struct {
 	SyncInterval      int        `json:"syncInterval"` // seconds between sync checks
 	ChannelCache      map[string]CachedChannel `json:"channelCache"`
 	MinimizeToTray    bool       `json:"minimizeToTray"`
+	AutoMountDrive    bool       `json:"autoMountDrive"`
+	AutoMountLetter   string     `json:"autoMountLetter"`
 }
 
 type CachedChannel struct {

@@ -98,7 +98,8 @@ function App() {
           background:'var(--surface)',
         }}>
           <img
-            src="/icon.webp"
+            src="/logo-drive.png"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/icon.webp'; }}
             alt="Awd TeleDrive" style={{ width:64, height:64, objectFit:'contain', borderRadius:12 }}
           />
           <div style={{

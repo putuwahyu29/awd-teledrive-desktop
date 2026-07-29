@@ -13,7 +13,7 @@ export const FileManagerTranslations = {
     folders: 'Folders',
     files: 'Files',
     empty: 'This folder is empty',
-    emptyHint: 'Drag files here or click \u2018New\u2019 to upload',
+    emptyHint: 'Drag files here or click ‘New’ to upload',
     name: 'Name',
     size: 'Size',
     modified: 'Modified',
@@ -140,6 +140,7 @@ export const FileManagerTranslations = {
     uploadCompleteToast: 'Upload complete ✓',
     uploadFailedToast: 'Upload failed',
     folderCreatedToast: 'Folder created ✓',
+    autoCreateVirtualFolder: '(Auto Create Virtual Folder Named After Local Folder)',
   },
   id: {
     telephoto: 'Galeri Aman',
@@ -153,7 +154,7 @@ export const FileManagerTranslations = {
     folders: 'Folder',
     files: 'File',
     empty: 'Folder ini kosong',
-    emptyHint: 'Seret file ke sini atau klik \u2018Baru\u2019',
+    emptyHint: 'Seret file ke sini atau klik ‘Baru’',
     name: 'Nama',
     size: 'Ukuran',
     modified: 'Dimodifikasi',
@@ -280,6 +281,7 @@ export const FileManagerTranslations = {
     uploadCompleteToast: 'Unggahan selesai ✓',
     uploadFailedToast: 'Gagal mengunggah',
     folderCreatedToast: 'Folder dibuat ✓',
+    autoCreateVirtualFolder: '(Otomatis Buat Virtual Folder Sesuai Nama Folder Lokal)',
   }
 };
 
@@ -320,7 +322,15 @@ export const LoginTranslations = {
     footerText: "Data Anda tersimpan di akun Telegram Anda sendiri. Kami tidak menyimpan file Anda.",
     disclaimer: "Disclaimer: Aplikasi ini tidak berafiliasi dengan Telegram. Segala risiko ditanggung pengguna. Gunakan aplikasi ini dengan bijak dan bertanggung jawab.",
     sec: "detik",
-    stepL1: "Nomor & API", stepL2: "Kode OTP", stepL3: "Verifikasi 2FA"
+    stepL1: "Nomor & API", stepL2: "Kode OTP", stepL3: "Verifikasi 2FA",
+    unmountConfirmTitle: 'Lepas Drive',
+    unmountConfirmMsg: (letter: string) => `Apakah Anda yakin ingin melepas Drive ${letter}? Aplikasi yang sedang mengakses drive ini akan kehilangan akses.`,
+    stopWebdavConfirmTitle: 'Hentikan Server WebDAV',
+    stopWebdavConfirmMsg: 'Apakah Anda yakin ingin menghentikan Server WebDAV Wi-Fi lokal? Perangkat HP dan Smart TV akan kehilangan akses.',
+    clearCacheConfirmTitle: 'Bersihkan Cache',
+    clearCacheConfirmMsg: 'Apakah Anda yakin ingin membersihkan cache thumbnail dan berkas lokal?',
+    importBackupConfirmTitle: 'Pulihkan Cadangan Metadata',
+    importBackupConfirmMsg: 'Memulihkan cadangan metadata akan memperbarui struktur folder dan pemetaan berkas. Lanjutkan?',
   },
   en: {
     appTitle: "Awd TeleDrive",
@@ -358,6 +368,14 @@ export const LoginTranslations = {
     footerText: "Your data is stored in your own Telegram account. We do not store your files.",
     disclaimer: "Disclaimer: This application is not affiliated with Telegram. All risks are borne by the user. Use this application wisely and responsibly.",
     sec: "seconds",
-    stepL1: "Phone & API", stepL2: "OTP Code", stepL3: "2FA Verify"
+    stepL1: "Phone & API", stepL2: "OTP Code", stepL3: "2FA Verify",
+    unmountConfirmTitle: 'Unmount Drive',
+    unmountConfirmMsg: (letter: string) => `Unmount drive ${letter}? Applications accessing this drive will lose access.`,
+    stopWebdavConfirmTitle: 'Stop WebDAV Server',
+    stopWebdavConfirmMsg: 'Stop local Wi-Fi WebDAV server? Connected mobile devices and Smart TVs will lose access.',
+    clearCacheConfirmTitle: 'Clear Cache',
+    clearCacheConfirmMsg: 'Clear local cache files and thumbnails?',
+    importBackupConfirmTitle: 'Restore Metadata Backup',
+    importBackupConfirmMsg: 'Importing metadata will update your folder structure and file mappings. Continue?',
   }
 };

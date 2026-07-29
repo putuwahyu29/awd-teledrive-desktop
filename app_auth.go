@@ -103,6 +103,9 @@ func (a *App) runClient() {
 		case <-a.connectedCh:
 		default:
 			close(a.connectedCh)
+			if a.virtualDriveMgr != nil {
+				go a.virtualDriveMgr.syncVirtualDriveRoot("0")
+			}
 		}
 		<-ctx.Done()
 		return nil
