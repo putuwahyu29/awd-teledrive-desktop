@@ -218,6 +218,68 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class SecureFolderGroup {
+	    id: string;
+	    title: string;
+	    hasBackup: boolean;
+	    accessHash: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new SecureFolderGroup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.title = source["title"];
+	        this.hasBackup = source["hasBackup"];
+	        this.accessHash = source["accessHash"];
+	    }
+	}
+	export class SecureFolderItem {
+	    localId: number;
+	    localUri: string;
+	    telegramFileId: string;
+	    telegramMessageId: number;
+	    syncStatus: string;
+	    timestamp: number;
+	    mimeType: string;
+	    size: number;
+	    name: string;
+	    isVideo: boolean;
+	    isFavorite: boolean;
+	    isEncrypted: boolean;
+	    latitude: number;
+	    longitude: number;
+	    bucketName: string;
+	    cameraModel: string;
+	    resolution: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SecureFolderItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.localId = source["localId"];
+	        this.localUri = source["localUri"];
+	        this.telegramFileId = source["telegramFileId"];
+	        this.telegramMessageId = source["telegramMessageId"];
+	        this.syncStatus = source["syncStatus"];
+	        this.timestamp = source["timestamp"];
+	        this.mimeType = source["mimeType"];
+	        this.size = source["size"];
+	        this.name = source["name"];
+	        this.isVideo = source["isVideo"];
+	        this.isFavorite = source["isFavorite"];
+	        this.isEncrypted = source["isEncrypted"];
+	        this.latitude = source["latitude"];
+	        this.longitude = source["longitude"];
+	        this.bucketName = source["bucketName"];
+	        this.cameraModel = source["cameraModel"];
+	        this.resolution = source["resolution"];
+	    }
+	}
 	export class StorageStats {
 	    images: number;
 	    videos: number;
@@ -243,68 +305,6 @@ export namespace main {
 	    }
 	}
 	
-	export class TelephotoGroup {
-	    id: string;
-	    title: string;
-	    hasBackup: boolean;
-	    accessHash: number;
-	
-	    static createFrom(source: any = {}) {
-	        return new TelephotoGroup(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.title = source["title"];
-	        this.hasBackup = source["hasBackup"];
-	        this.accessHash = source["accessHash"];
-	    }
-	}
-	export class TelephotoMediaItem {
-	    localId: number;
-	    localUri: string;
-	    telegramFileId: string;
-	    telegramMessageId: number;
-	    syncStatus: string;
-	    timestamp: number;
-	    mimeType: string;
-	    size: number;
-	    name: string;
-	    isVideo: boolean;
-	    isFavorite: boolean;
-	    isEncrypted: boolean;
-	    latitude: number;
-	    longitude: number;
-	    bucketName: string;
-	    cameraModel: string;
-	    resolution: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new TelephotoMediaItem(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.localId = source["localId"];
-	        this.localUri = source["localUri"];
-	        this.telegramFileId = source["telegramFileId"];
-	        this.telegramMessageId = source["telegramMessageId"];
-	        this.syncStatus = source["syncStatus"];
-	        this.timestamp = source["timestamp"];
-	        this.mimeType = source["mimeType"];
-	        this.size = source["size"];
-	        this.name = source["name"];
-	        this.isVideo = source["isVideo"];
-	        this.isFavorite = source["isFavorite"];
-	        this.isEncrypted = source["isEncrypted"];
-	        this.latitude = source["latitude"];
-	        this.longitude = source["longitude"];
-	        this.bucketName = source["bucketName"];
-	        this.cameraModel = source["cameraModel"];
-	        this.resolution = source["resolution"];
-	    }
-	}
 	export class VersionCheckResult {
 	    has_update: boolean;
 	    latest_version: string;

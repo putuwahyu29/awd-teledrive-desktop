@@ -2,7 +2,8 @@
 
 export const FileManagerTranslations = {
   en: {
-    telephoto: 'Secure Gallery',
+    secureFolder: 'Secure Folder',
+    telephoto: 'Secure Folder',
     myDrive: 'My Drive',
     starred: 'Starred',
     media: 'Media',
@@ -143,7 +144,8 @@ export const FileManagerTranslations = {
     autoCreateVirtualFolder: '(Auto Create Virtual Folder Named After Local Folder)',
   },
   id: {
-    telephoto: 'Galeri Aman',
+    secureFolder: 'Folder Aman',
+    telephoto: 'Folder Aman',
     myDrive: 'Drive Saya',
     starred: 'Berbintang',
     media: 'Media',

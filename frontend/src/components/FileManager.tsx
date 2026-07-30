@@ -24,7 +24,7 @@ import { EventsOn, OnFileDrop, OnFileDropOff } from '../../wailsjs/runtime/runti
 
 import PreviewModal from './PreviewModal';
 import WebShareManagement from './WebShareManagement';
-import TelephotoGallery from './TelephotoGallery';
+import SecureFolder from './SecureFolder';
 import VirtualDriveManagement from './VirtualDriveManagement';
 import SettingsManagement from './SettingsManagement';
 
@@ -202,9 +202,23 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
   /* theme */
   useEffect(() => { applyTheme(dark); }, [dark]);
 
+  const refreshStorageStats = async () => {
+    try {
+      const s = await GetStorageStats();
+      if (s) {
+        setStorageStats(s);
+        if (typeof s.total === 'number' && s.total >= 0) {
+          setTotalSize(s.total);
+        }
+      }
+    } catch (e) {
+      GetTotalSize().then(sz => setTotalSize(sz)).catch(() => {});
+    }
+  };
+
   /* init */
   useEffect(() => {
-    GetTotalSize().then(s => setTotalSize(s)).catch(() => {});
+    refreshStorageStats();
     fetchActiveWebShares();
     
     // Load Backend Settings
@@ -347,7 +361,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
 
   /* fetch */
   const fetchFiles = async () => {
-    if (activeMenu === 'search' || activeMenu === 'sync' || activeMenu === 'recent' || activeMenu === 'telephoto' || activeMenu === 'analytics' || activeMenu === 'webshare') return;
+    if (activeMenu === 'search' || activeMenu === 'sync' || activeMenu === 'recent' || activeMenu === 'telephoto' || activeMenu === 'secureFolder' || activeMenu === 'analytics' || activeMenu === 'webshare') return;
     setLoading(true);
     setHasMore(false);
     try {
@@ -355,7 +369,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
       if (activeMenu === 'starred') r = await GetStarredFiles();
       else if (activeMenu === 'media') {
         const rawMedia = (await GetMediaFiles()) || [];
-        r = rawMedia.filter((f: any) => !f.name?.toLowerCase().endsWith('.enc') && f.type !== 'enc');
+        r = rawMedia.filter((f: any) => !f.name?.toLowerCase().startsWith('enc_'));
       }
       else if (activeMenu === 'drive') {
         const page = await GetFilesPage(currentFolder ? String(currentFolder.id) : '', 0);
@@ -376,6 +390,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
         await (window as any).go.main.App.RefreshFiles();
       }
       await fetchFiles();
+      await refreshStorageStats();
       addToast(lang === 'id' ? 'Data berhasil disinkronkan dengan Telegram ✓' : 'Data successfully synced with Telegram ✓');
     } catch (e) {
       addToast(String(e), 'error');
@@ -1043,12 +1058,12 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
         navTo={navTo}
         t={t}
         lang={lang}
-        totalSize={totalSize}
+        totalSize={storageStats?.total ?? totalSize}
         doUpload={doUpload}
         setShowNewFolder={setShowNewFolder}
         onStorageClick={() => {
           navTo('analytics');
-          GetStorageStats().then(s => setStorageStats(s));
+          refreshStorageStats();
         }}
       />
 
@@ -1137,6 +1152,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
                     : activeMenu === 'webshare' ? (lang === 'id' ? 'Berbagi Web' : 'Web Sharing') 
                     : activeMenu === 'mountdrive' ? (lang === 'id' ? 'Mount Virtual Drive' : 'Mount Virtual Drive')
                     : activeMenu === 'settings' ? (lang === 'id' ? 'Pengaturan' : 'Settings')
+                    : (activeMenu === 'secureFolder' || activeMenu === 'telephoto') ? (lang === 'id' ? 'Folder Aman' : 'Secure Folder')
                     : t.searchResults}
                 </h2>
               )}
@@ -1173,8 +1189,8 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
 
           {activeMenu === 'analytics' ? (
             <StorageAnalytics storageStats={storageStats} t={t} lang={lang} />
-          ) : activeMenu === 'telephoto' ? (
-            <TelephotoGallery />
+          ) : (activeMenu === 'secureFolder' || activeMenu === 'telephoto') ? (
+            <SecureFolder />
           ) : activeMenu === 'webshare' ? (
             <WebShareManagement lang={lang} addToast={addToast} />
           ) : activeMenu === 'changelog' ? (

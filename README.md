@@ -43,7 +43,7 @@ This application is part of a cross-platform ecosystem designed to turn Telegram
   - [Logging In](#logging-in)
   - [Web Sharing & Cloudflare Tunnel](#web-sharing--cloudflare-tunnel)
   - [Folder Synchronization (One-Way & Two-Way)](#folder-synchronization-one-way--two-way)
-  - [Telephoto Encrypted Media Gallery](#telephoto-encrypted-media-gallery)
+  - [Encrypted Secure Folder (.enc)](#encrypted-secure-folder-enc)
 - [🛠️ Developer Guide](#️-developer-guide)
   - [Project Directory Structure](#project-directory-structure)
   - [Running in Development Mode](#running-in-development-mode)
@@ -68,9 +68,9 @@ This application is part of a cross-platform ecosystem designed to turn Telegram
     *   **Public Tunneling**: Built-in, automated integration with **Cloudflare Tunnel (`trycloudflare.com`)** that allows secure, remote sharing without complex port forwarding.
     *   **Password Security**: Password-protect your public shares.
     *   **Zip Archiving**: Download folders as complete `.zip` archives on the fly.
-*   **🖼️ Telephoto Encrypted Media Gallery**:
-    *   Directly browse and search photos/videos grouped chronologically.
-    *   Built-in decryption for AES-256-GCM encrypted media from companion apps (like `awd-telephoto-android`) using secure PBKDF2 key derivation.
+*   **🔒 Encrypted Secure Folder (.enc)**:
+    *   Browse and manage all encrypted files (.enc) including documents, archives, code, photos, and videos.
+    *   Built-in decryption for AES-256-GCM encrypted files using secure PBKDF2 key derivation (including companion mobile backups from `awd-telephoto-android`).
 *   **⚙️ Native Windows Integration**: System tray support, minimize-to-tray on close, and auto-launch on startup configured directly via the Windows Registry.
 
 ---
@@ -150,11 +150,11 @@ To share a file or folder:
 5. Set the sync interval (default is 60 seconds).
 6. Enable the task. The background process will automatically run at intervals.
 
-### Telephoto Encrypted Media Gallery
-If you use encrypted mobile backups:
-1. Navigate to the **Telephoto** tab.
+### Encrypted Secure Folder (.enc)
+If you use encrypted mobile or cloud backups:
+1. Navigate to the **Secure Folder** tab.
 2. Enter your decryption password.
-3. Browse, search, and view your images or videos. Decrypted items are cached dynamically in the user cache directory and cleared automatically upon request.
+3. Browse, search, and view your encrypted documents, media, archives, and code files. Decrypted items are cached dynamically in the user cache directory and cleared automatically upon request.
 
 ---
 
@@ -169,7 +169,7 @@ awd-teledrive-desktop/
 ├── app_files.go            # Core file and folder storage, uploads/downloads, progress trackers
 ├── app_sync.go             # Sync manager orchestration (One-Way / Two-Way background sync)
 ├── main.go                 # Go application entry point
-├── telephoto.go            # Local PBKDF2 & AES-256-GCM media decryption and gallery helpers
+├── secure_folder.go         # Local PBKDF2 & AES-256-GCM file decryption and Secure Folder helpers
 ├── tray.go                 # Windows system tray integration
 ├── web_server.go           # Local web server runner & Cloudflare Tunnel launcher
 ├── web_handlers.go         # HTTP handlers for public share links, streaming, and batch downloads

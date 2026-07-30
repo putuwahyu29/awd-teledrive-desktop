@@ -16,19 +16,29 @@ export function ClearCache():Promise<Record<string, any>>;
 
 export function ClearRecentFiles():Promise<Record<string, any>>;
 
+export function ClearSecureFolderCache():Promise<Record<string, any>>;
+
 export function ClearTelephotoCache():Promise<Record<string, any>>;
 
 export function CreateFolder(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
 
+export function CreateSecureFolderGroup(arg1:string,arg2:string):Promise<Record<string, any>>;
+
+export function CreateTelephotoGroup(arg1:string,arg2:string):Promise<Record<string, any>>;
+
 export function CreateWebShare(arg1:string,arg2:string,arg3:string,arg4:string,arg5:number,arg6:string,arg7:string):Promise<main.WebShareItem>;
 
 export function DeleteFile(arg1:string,arg2:string):Promise<Record<string, any>>;
+
+export function DeleteSecureFolderGroup(arg1:string):Promise<Record<string, any>>;
 
 export function DeleteWebShare(arg1:string):Promise<boolean>;
 
 export function DownloadFile(arg1:string,arg2:string,arg3:string,arg4:number):Promise<Record<string, any>>;
 
 export function DownloadFolder(arg1:string,arg2:string):Promise<Record<string, any>>;
+
+export function DownloadSecureFolderFile(arg1:string,arg2:string,arg3:string,arg4:number,arg5:boolean,arg6:string):Promise<Record<string, any>>;
 
 export function DownloadTelephotoFile(arg1:string,arg2:string,arg3:string,arg4:number,arg5:boolean,arg6:string):Promise<Record<string, any>>;
 
@@ -56,6 +66,10 @@ export function GetMountedVirtualDrives():Promise<Array<main.MountedDriveInfo>>;
 
 export function GetRecentFiles():Promise<Array<main.RecentItem>>;
 
+export function GetSecureFolderCacheDir():Promise<string>;
+
+export function GetSecureFolderThumbnail(arg1:string,arg2:string,arg3:string,arg4:boolean):Promise<string>;
+
 export function GetSettings():Promise<Record<string, any>>;
 
 export function GetShareLink(arg1:string):Promise<Record<string, any>>;
@@ -82,7 +96,9 @@ export function GetWebShares():Promise<Array<main.WebShareItem>>;
 
 export function ImportManifest():Promise<Record<string, any>>;
 
-export function ImportTelephotoBackup(arg1:string,arg2:string):Promise<Array<main.TelephotoMediaItem>>;
+export function ImportSecureFolderBackup(arg1:string,arg2:string):Promise<Array<main.SecureFolderItem>>;
+
+export function ImportTelephotoBackup(arg1:string,arg2:string):Promise<Array<main.SecureFolderItem>>;
 
 export function IsStartupEnabled():Promise<boolean>;
 
@@ -110,6 +126,8 @@ export function OpenReleaseURL(arg1:string):Promise<void>;
 
 export function PreviewFile(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;
 
+export function PreviewSecureFolderFile(arg1:string,arg2:string,arg3:string,arg4:boolean,arg5:string):Promise<Record<string, any>>;
+
 export function PreviewTelephotoFile(arg1:string,arg2:string,arg3:string,arg4:boolean,arg5:string):Promise<Record<string, any>>;
 
 export function QuitApp():Promise<void>;
@@ -124,9 +142,13 @@ export function RenameFile(arg1:string,arg2:string,arg3:string):Promise<Record<s
 
 export function RenameFolder(arg1:string,arg2:string):Promise<Record<string, any>>;
 
+export function RenameSecureFolderGroup(arg1:string,arg2:string):Promise<Record<string, any>>;
+
 export function SaveSyncSettings(arg1:string,arg2:number):Promise<Record<string, any>>;
 
-export function ScanTelephotoGroups():Promise<Array<main.TelephotoGroup>>;
+export function ScanSecureFolderGroups():Promise<Array<main.SecureFolderGroup>>;
+
+export function ScanTelephotoGroups():Promise<Array<main.SecureFolderGroup>>;
 
 export function SearchFiles(arg1:string):Promise<Array<main.DriveItem>>;
 
@@ -171,3 +193,7 @@ export function UnmountVirtualDrive(arg1:string):Promise<void>;
 export function UploadFile(arg1:string,arg2:string):Promise<Record<string, any>>;
 
 export function UploadMultipleFiles(arg1:Array<string>,arg2:string):Promise<Record<string, any>>;
+
+export function UploadMultipleSecureFolderFiles(arg1:string,arg2:Array<string>,arg3:string):Promise<Record<string, any>>;
+
+export function UploadSecureFolderFile(arg1:string,arg2:string,arg3:string):Promise<Record<string, any>>;

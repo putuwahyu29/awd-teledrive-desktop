@@ -30,6 +30,10 @@ export function ClearRecentFiles() {
   return window['go']['main']['App']['ClearRecentFiles']();
 }
 
+export function ClearSecureFolderCache() {
+  return window['go']['main']['App']['ClearSecureFolderCache']();
+}
+
 export function ClearTelephotoCache() {
   return window['go']['main']['App']['ClearTelephotoCache']();
 }
@@ -38,12 +42,24 @@ export function CreateFolder(arg1, arg2, arg3) {
   return window['go']['main']['App']['CreateFolder'](arg1, arg2, arg3);
 }
 
+export function CreateSecureFolderGroup(arg1, arg2) {
+  return window['go']['main']['App']['CreateSecureFolderGroup'](arg1, arg2);
+}
+
+export function CreateTelephotoGroup(arg1, arg2) {
+  return window['go']['main']['App']['CreateTelephotoGroup'](arg1, arg2);
+}
+
 export function CreateWebShare(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['CreateWebShare'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function DeleteFile(arg1, arg2) {
   return window['go']['main']['App']['DeleteFile'](arg1, arg2);
+}
+
+export function DeleteSecureFolderGroup(arg1) {
+  return window['go']['main']['App']['DeleteSecureFolderGroup'](arg1);
 }
 
 export function DeleteWebShare(arg1) {
@@ -56,6 +72,10 @@ export function DownloadFile(arg1, arg2, arg3, arg4) {
 
 export function DownloadFolder(arg1, arg2) {
   return window['go']['main']['App']['DownloadFolder'](arg1, arg2);
+}
+
+export function DownloadSecureFolderFile(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['DownloadSecureFolderFile'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function DownloadTelephotoFile(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -110,6 +130,14 @@ export function GetRecentFiles() {
   return window['go']['main']['App']['GetRecentFiles']();
 }
 
+export function GetSecureFolderCacheDir() {
+  return window['go']['main']['App']['GetSecureFolderCacheDir']();
+}
+
+export function GetSecureFolderThumbnail(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GetSecureFolderThumbnail'](arg1, arg2, arg3, arg4);
+}
+
 export function GetSettings() {
   return window['go']['main']['App']['GetSettings']();
 }
@@ -160,6 +188,10 @@ export function GetWebShares() {
 
 export function ImportManifest() {
   return window['go']['main']['App']['ImportManifest']();
+}
+
+export function ImportSecureFolderBackup(arg1, arg2) {
+  return window['go']['main']['App']['ImportSecureFolderBackup'](arg1, arg2);
 }
 
 export function ImportTelephotoBackup(arg1, arg2) {
@@ -218,6 +250,10 @@ export function PreviewFile(arg1, arg2, arg3) {
   return window['go']['main']['App']['PreviewFile'](arg1, arg2, arg3);
 }
 
+export function PreviewSecureFolderFile(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['PreviewSecureFolderFile'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function PreviewTelephotoFile(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['PreviewTelephotoFile'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -246,8 +282,16 @@ export function RenameFolder(arg1, arg2) {
   return window['go']['main']['App']['RenameFolder'](arg1, arg2);
 }
 
+export function RenameSecureFolderGroup(arg1, arg2) {
+  return window['go']['main']['App']['RenameSecureFolderGroup'](arg1, arg2);
+}
+
 export function SaveSyncSettings(arg1, arg2) {
   return window['go']['main']['App']['SaveSyncSettings'](arg1, arg2);
+}
+
+export function ScanSecureFolderGroups() {
+  return window['go']['main']['App']['ScanSecureFolderGroups']();
 }
 
 export function ScanTelephotoGroups() {
@@ -340,4 +384,12 @@ export function UploadFile(arg1, arg2) {
 
 export function UploadMultipleFiles(arg1, arg2) {
   return window['go']['main']['App']['UploadMultipleFiles'](arg1, arg2);
+}
+
+export function UploadMultipleSecureFolderFiles(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UploadMultipleSecureFolderFiles'](arg1, arg2, arg3);
+}
+
+export function UploadSecureFolderFile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UploadSecureFolderFile'](arg1, arg2, arg3);
 }

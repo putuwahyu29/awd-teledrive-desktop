@@ -787,20 +787,65 @@ func (a *App) DeleteFile(currentPath string, fileID string) map[string]interface
 	if strings.HasPrefix(fileID, "vf_") {
 		manifest := a.loadCloudManifest()
 		if _, exists := manifest.VirtualFolders[fileID]; exists {
-			delete(manifest.VirtualFolders, fileID)
+			// Collect target folder and all sub-virtual folders recursively
+			foldersToDelete := make(map[string]bool)
+			foldersToDelete[fileID] = true
+
+			for {
+				added := false
+				for vfID, vf := range manifest.VirtualFolders {
+					if !foldersToDelete[vfID] && foldersToDelete[vf.ParentID] {
+						foldersToDelete[vfID] = true
+						added = true
+					}
+				}
+				if !added {
+					break
+				}
+			}
+
+			// Collect all mapped file IDs (Telegram message IDs) belonging to any of the folders being deleted
+			var msgIDsToDelete []int
 			if manifest.FileMappings != nil {
 				for fId, pId := range manifest.FileMappings {
-					if pId == fileID {
+					if foldersToDelete[pId] {
+						if msgID, err := strconv.Atoi(fId); err == nil {
+							msgIDsToDelete = append(msgIDsToDelete, msgID)
+						}
 						delete(manifest.FileMappings, fId)
 					}
 				}
 			}
+
+			// Delete files from Telegram if API is connected and message IDs exist
+			api := a.getAPI()
+			if api != nil && len(msgIDsToDelete) > 0 {
+				chunkSize := 100
+				for i := 0; i < len(msgIDsToDelete); i += chunkSize {
+					end := i + chunkSize
+					if end > len(msgIDsToDelete) {
+						end = len(msgIDsToDelete)
+					}
+					chunk := msgIDsToDelete[i:end]
+					_, _ = api.MessagesDeleteMessages(a.ctx, &tg.MessagesDeleteMessagesRequest{
+						Revoke: true,
+						ID:     chunk,
+					})
+				}
+			}
+
+			// Delete all collected virtual folders from manifest
+			for vfID := range foldersToDelete {
+				delete(manifest.VirtualFolders, vfID)
+			}
+
 			err := a.saveCloudManifest(manifest)
 			if err != nil {
 				return map[string]interface{}{"success": false, "error": err.Error()}
 			}
 			return map[string]interface{}{"success": true}
 		}
+		return map[string]interface{}{"success": false, "error": "Virtual folder not found"}
 	}
 
 	api := a.getAPI()
@@ -809,25 +854,55 @@ func (a *App) DeleteFile(currentPath string, fileID string) map[string]interface
 	}
 
 	id, _ := strconv.ParseInt(fileID, 10, 64)
-	
+
+	// Check if fileID refers to a private channel folder
+	var channelInput *tg.InputChannel
 	a.cacheMu.RLock()
-	channel, isFolder := a.channelCache[id]
+	c, isFolder := a.channelCache[id]
 	a.cacheMu.RUnlock()
-	
+
 	if isFolder {
-		_, err := api.ChannelsDeleteChannel(a.ctx, &tg.InputChannel{
-			ChannelID:  channel.ChannelID,
-			AccessHash: channel.AccessHash,
-		})
+		channelInput = &tg.InputChannel{
+			ChannelID:  c.ChannelID,
+			AccessHash: c.AccessHash,
+		}
+	} else {
+		ch := a.getInputPeer(fileID)
+		if cPeer, ok := ch.(*tg.InputPeerChannel); ok {
+			channelInput = &tg.InputChannel{
+				ChannelID:  cPeer.ChannelID,
+				AccessHash: cPeer.AccessHash,
+			}
+		} else {
+			cfg := a.loadConfig()
+			if cfg.ChannelCache != nil {
+				if cc, ok := cfg.ChannelCache[fileID]; ok {
+					channelInput = &tg.InputChannel{
+						ChannelID:  id,
+						AccessHash: cc.AccessHash,
+					}
+				}
+			}
+		}
+	}
+
+	if channelInput != nil {
+		_, err := api.ChannelsDeleteChannel(a.ctx, channelInput)
 		if err != nil {
 			return map[string]interface{}{"success": false, "error": err.Error()}
 		}
 		a.cacheMu.Lock()
-		delete(a.channelCache, id)
+		delete(a.channelCache, channelInput.ChannelID)
 		a.cacheMu.Unlock()
+
+		cfg := a.loadConfig()
+		if cfg.ChannelCache != nil {
+			delete(cfg.ChannelCache, fmt.Sprintf("%d", channelInput.ChannelID))
+			_ = a.saveConfig(cfg)
+		}
 		return map[string]interface{}{"success": true}
 	}
-	
+
 	peer := a.getInputPeer(currentPath)
 	_, err := api.MessagesDeleteMessages(a.ctx, &tg.MessagesDeleteMessagesRequest{
 		Revoke: true,
@@ -840,7 +915,7 @@ func (a *App) DeleteFile(currentPath string, fileID string) map[string]interface
 					ChannelID:  channelPeer.ChannelID,
 					AccessHash: channelPeer.AccessHash,
 				},
-				ID:      []int{int(id)},
+				ID: []int{int(id)},
 			})
 			if err != nil {
 				return map[string]interface{}{"success": false, "error": err.Error()}
@@ -862,21 +937,7 @@ func (a *App) DeleteFile(currentPath string, fileID string) map[string]interface
 }
 
 func (a *App) GetTotalSize() int64 {
-	var totalSize int64 = 0
-	folders := a.GetFiles("")
-	for _, f := range folders {
-		if f.Type != "folder" {
-			totalSize += f.Size
-		} else {
-			subFiles := a.GetFiles(f.ID)
-			for _, sf := range subFiles {
-				if sf.Type != "folder" {
-					totalSize += sf.Size
-				}
-			}
-		}
-	}
-	return totalSize
+	return a.GetStorageStats().Total
 }
 
 func (a *App) GetStorageStats() StorageStats {
@@ -884,7 +945,11 @@ func (a *App) GetStorageStats() StorageStats {
 	folders := a.GetFiles("")
 	
 	processFile := func(name string, size int64) {
-		ext := strings.ToLower(filepath.Ext(name))
+		cleanName := name
+		if strings.HasPrefix(strings.ToLower(cleanName), "enc_") {
+			cleanName = cleanName[4:]
+		}
+		ext := strings.ToLower(filepath.Ext(cleanName))
 		if ext == "" {
 			stats.Others += size
 			return
@@ -920,14 +985,13 @@ func (a *App) GetStorageStats() StorageStats {
 		}
 	}
 
-	teleGroups := a.ScanTelephotoGroups()
-	for _, tgGroup := range teleGroups {
-		if tgGroup.HasBackup {
-			tgFiles := a.GetFiles(tgGroup.ID)
-			for _, tgFile := range tgFiles {
-				if tgFile.Type != "folder" {
-					processFile(tgFile.Name, tgFile.Size)
-				}
+	// Include files from all Secure Folders
+	secGroups := a.ScanSecureFolderGroups()
+	for _, group := range secGroups {
+		secItems, err := a.ImportSecureFolderBackup(group.ID, "")
+		if err == nil {
+			for _, item := range secItems {
+				processFile(item.Name, item.Size)
 			}
 		}
 	}
@@ -2014,6 +2078,24 @@ func (a *App) MoveFile(fileIdStr string, sourceChatId string, destChatId string)
 }
 
 func (a *App) MoveFolder(folderChatId string, destChatId string) map[string]interface{} {
+	if strings.HasPrefix(folderChatId, "vf_") {
+		manifest := a.loadCloudManifest()
+		if vf, exists := manifest.VirtualFolders[folderChatId]; exists {
+			parent := destChatId
+			if parent == "" || parent == "/" {
+				parent = "0"
+			}
+			vf.ParentID = parent
+			manifest.VirtualFolders[folderChatId] = vf
+			err := a.saveCloudManifest(manifest)
+			if err != nil {
+				return map[string]interface{}{"success": false, "error": err.Error()}
+			}
+			return map[string]interface{}{"success": true}
+		}
+		return map[string]interface{}{"success": false, "error": "Virtual folder not found"}
+	}
+
 	api := a.getAPI()
 	if api == nil {
 		return map[string]interface{}{"success": false, "error": "not connected"}
@@ -2273,7 +2355,7 @@ func (a *App) GetMediaFiles() []DriveItem {
 	
 	isMedia := func(ext string, name string) bool {
 		nameLower := strings.ToLower(name)
-		if strings.HasSuffix(nameLower, ".enc") || strings.ToLower(ext) == "enc" {
+		if strings.HasPrefix(nameLower, "enc_") {
 			return false
 		}
 		ext = strings.ToLower(ext)
@@ -2324,12 +2406,28 @@ func (a *App) GetMediaFiles() []DriveItem {
 }
 
 func (a *App) RenameFolder(chatIdStr string, newName string) map[string]interface{} {
+	newName = strings.TrimSpace(newName)
+	if newName == "" {
+		return map[string]interface{}{"success": false, "error": "name cannot be empty"}
+	}
+
+	if strings.HasPrefix(chatIdStr, "vf_") {
+		manifest := a.loadCloudManifest()
+		if vf, exists := manifest.VirtualFolders[chatIdStr]; exists {
+			vf.Name = newName
+			manifest.VirtualFolders[chatIdStr] = vf
+			err := a.saveCloudManifest(manifest)
+			if err != nil {
+				return map[string]interface{}{"success": false, "error": err.Error()}
+			}
+			return map[string]interface{}{"success": true}
+		}
+		return map[string]interface{}{"success": false, "error": "Virtual folder not found"}
+	}
+
 	api := a.getAPI()
 	if api == nil {
 		return map[string]interface{}{"success": false, "error": "not connected"}
-	}
-	if newName == "" {
-		return map[string]interface{}{"success": false, "error": "name cannot be empty"}
 	}
 
 	channel := a.getInputChannel(chatIdStr)
@@ -2344,6 +2442,13 @@ func (a *App) RenameFolder(chatIdStr string, newName string) map[string]interfac
 	if err != nil {
 		return map[string]interface{}{"success": false, "error": err.Error()}
 	}
+
+	if inputChan, ok := channel.(*tg.InputChannel); ok {
+		a.cacheMu.Lock()
+		a.persistChannelCache(inputChan.ChannelID, inputChan.AccessHash, newName)
+		a.cacheMu.Unlock()
+	}
+
 	return map[string]interface{}{"success": true}
 }
 

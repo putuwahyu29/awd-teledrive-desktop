@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Plus, Home, Star, Image as ImageIcon, Camera, RefreshCw, 
-  Clock, Share2, Cloud, Upload, FolderPlus, Info, HardDrive, Settings as SettingsIcon
+  Clock, Share2, Cloud, Upload, FolderPlus, Info, HardDrive, Settings as SettingsIcon, FolderLock, Lock
 } from 'lucide-react';
 import { fmtBytes } from '../../utils/format';
 
@@ -146,7 +146,7 @@ export default function FileManagerSidebar({
           { key: 'drive',   icon: <Home size={20}/>,      label: t.myDrive, action: () => navTo('drive', null) },
           { key: 'starred', icon: <Star size={20}/>,      label: t.starred, action: () => navTo('starred') },
           { key: 'media',   icon: <ImageIcon size={20}/>, label: t.media,   action: () => navTo('media') },
-          { key: 'telephoto', icon: <Camera size={20}/>,   label: t.telephoto,   action: () => navTo('telephoto') },
+          { key: 'secureFolder', icon: <FolderLock size={20}/>, label: t.secureFolder || t.telephoto, action: () => navTo('secureFolder') },
           { key: 'recent',  icon: <Clock size={20}/>,     label: t.recent,       action: () => navTo('recent') },
           { key: 'webshare', icon: <Share2 size={20}/>,     label: t.webShare,     action: () => navTo('webshare') },
           { key: 'settings', icon: <SettingsIcon size={20}/>, label: lang === 'id' ? 'Pengaturan' : 'Settings', action: () => navTo('settings') },

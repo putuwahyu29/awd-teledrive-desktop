@@ -43,7 +43,7 @@ Aplikasi ini merupakan bagian dari ekosistem lintas platform yang dirancang untu
   - [Proses Login](#proses-login)
   - [Berbagi File via Web & Cloudflare Tunnel](#berbagi-file-via-web--cloudflare-tunnel)
   - [Sinkronisasi Folder (Satu-Arah & Dua-Arah)](#sinkronisasi-folder-satu-arah--dua-arah)
-  - [Galeri Media Terenkripsi Telephoto](#galeri-media-terenkripsi-telephoto)
+  - [Folder Aman Terenkripsi](#folder-aman-terenkripsi)
 - [🛠️ Panduan Pengembangan (Developer)](#-panduan-pengembangan-developer)
   - [Struktur Direktori Proyek](#struktur-direktori-proyek)
   - [Menjalankan Mode Development](#menjalankan-mode-development)
@@ -68,9 +68,9 @@ Aplikasi ini merupakan bagian dari ekosistem lintas platform yang dirancang untu
     *   **Akses Publik**: Integrasi otomatis dengan **Cloudflare Tunnel (`trycloudflare.com`)** yang menghasilkan tautan publik gratis tanpa konfigurasi port-forwarding yang rumit.
     *   **Proteksi Password**: Lindungi file yang dibagikan dengan kata sandi tambahan.
     *   **Unduhan ZIP**: Mengunduh seluruh isi folder secara instan dalam format `.zip`.
-*   **🖼️ Galeri Media Terenkripsi Telephoto**:
-    *   Menampilkan foto dan video yang diurutkan rapi berdasarkan tanggal.
-    *   Fitur dekripsi lokal untuk file media yang dienkripsi menggunakan metode AES-256-GCM + PBKDF2 (seperti hasil backup aplikasi mobile companion `awd-telephoto-android`).
+*   **🔒 Folder Aman Terenkripsi**:
+    *   Menampilkan seluruh file terenkripsi (AES-256-GCM berawalan `enc_`) seperti dokumen, arsip, kode, foto, dan video.
+    *   Fitur dekripsi lokal untuk file yang dienkripsi menggunakan metode AES-256-GCM + PBKDF2 (termasuk hasil backup aplikasi mobile companion `awd-telephoto-android`).
 *   **⚙️ Integrasi Windows Native**: Dukungan berjalan di latar belakang (system tray), opsi meminimalkan ke tray saat jendela ditutup, dan fitur auto-start saat Windows booting (melalui Registry Windows).
 
 ---
@@ -150,11 +150,11 @@ Untuk membagikan file atau folder:
 5. Atur interval waktu pengecekan (default: 60 detik).
 6. Aktifkan tugas. Proses latar belakang akan berjalan otomatis sesuai jadwal.
 
-### Galeri Media Terenkripsi Telephoto
-Jika Anda menggunakan pencadangan foto/video terenkripsi dari perangkat seluler:
-1. Masuk ke tab **Telephoto**.
+### Folder Aman Terenkripsi (.enc)
+Jika Anda menggunakan pencadangan terenkripsi dari perangkat seluler atau backup:
+1. Masuk ke tab **Folder Aman**.
 2. Masukkan kata sandi dekripsi Anda.
-3. Galeri akan menampilkan foto dan video secara instan. File sementara yang terdekripsi disimpan di folder cache lokal dan dapat dibersihkan kapan saja dengan menekan tombol **Clear Cache**.
+3. Folder Aman akan menampilkan seluruh file terenkripsi (.enc). File sementara yang terdekripsi disimpan di folder cache lokal dan dapat dibersihkan kapan saja dengan menekan tombol **Hapus Cache**.
 
 ---
 
@@ -169,7 +169,7 @@ awd-teledrive-desktop/
 ├── app_files.go            # Penyimpanan berkas & folder inti, upload/download, dan pelacak progress
 ├── app_sync.go             # Orkestrasi manajer sinkronisasi (sinkronisasi latar belakang Satu & Dua Arah)
 ├── main.go                 # Entry point aplikasi Go
-├── telephoto.go            # Dekripsi media lokal PBKDF2 & AES-256-GCM serta pembantu galeri
+├── secure_folder.go         # Dekripsi berkas PBKDF2 & AES-256-GCM serta pembantu Folder Aman
 ├── tray.go                 # Integrasi system tray Windows
 ├── web_server.go           # Server web lokal & peluncur Cloudflare Tunnel
 ├── web_handlers.go         # Handler HTTP untuk tautan berbagi publik, streaming, dan unduhan batch
