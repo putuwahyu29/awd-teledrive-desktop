@@ -1,5 +1,29 @@
 [
   {
+    "version": "1.3.0",
+    "date": "2026-07-30",
+    "title": {
+      "id": "Folder Aman (Enkripsi AES-GCM), Mode Server Headless & Proteksi Rate Limit",
+      "en": "Secure Folder (AES-GCM Encryption), Headless Server Mode & Rate Limit Protection"
+    },
+    "changes": {
+      "id": [
+        "Fitur Secure Folder (Enkripsi AES-GCM) pengganti Telephoto untuk mengamankan dan mengenkripsi berkas sensitif sebelum diunggah ke Telegram.",
+        "Dukungan Mode Server Headless dengan kontainerisasi Docker untuk kemudahan deployment di server VPS/Terminal tanpa GUI.",
+        "Proteksi Rate Limiting & Queue Request cerdas pada API Telegram untuk mencegah kendala error 429 FloodWait saat transfer massal.",
+        "Peningkatan manajemen Folder Virtual [VF:] dan Channel Privat yang kini mendukung ubah nama (rename) serta penghapusan folder rekursif secara utuh.",
+        "Pencegahan mounting berulang (duplicate mount) pada fitur Virtual Drive ke Windows File Explorer."
+      ],
+      "en": [
+        "Secure Folder feature (AES-GCM Encryption) replacing Telephoto to encrypt sensitive files locally before uploading to Telegram.",
+        "Headless Server Mode with Docker containerization support for seamless deployment on VPS/Terminal without GUI.",
+        "Smart Telegram API Rate Limiting & Request Queue protection to prevent 429 FloodWait errors during bulk transfers.",
+        "Enhanced Virtual Folder [VF:] and Private Channel management supporting rename and full recursive deletion of folders.",
+        "Prevention of duplicate mounting in Virtual Drive feature to Windows File Explorer."
+      ]
+    }
+  },
+  {
     "version": "1.2.0",
     "date": "2026-07-29",
     "title": {
