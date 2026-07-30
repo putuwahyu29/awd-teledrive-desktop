@@ -105,15 +105,17 @@ func (a *App) startup(ctx context.Context) {
 		}()
 	}
 
-	// Auto mount virtual drive on app startup
-	go func() {
-		time.Sleep(2 * time.Second)
-		letter := cfg.AutoMountLetter
-		if letter == "" {
-			letter = "Z:"
-		}
-		_, _ = a.MountVirtualDrive("0", letter)
-	}()
+	// Auto mount virtual drive on app startup if enabled in settings
+	if cfg.AutoMountDrive {
+		go func() {
+			time.Sleep(2 * time.Second)
+			letter := cfg.AutoMountLetter
+			if letter == "" {
+				letter = "Z:"
+			}
+			_, _ = a.MountVirtualDrive("0", letter)
+		}()
+	}
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -124,6 +126,7 @@ func (a *App) shutdown(ctx context.Context) {
 		a.webServer.Stop()
 	}
 	if a.virtualDriveMgr != nil {
+		a.UnmountAllVirtualDrives()
 		_ = a.StopNativeWebDAVServer()
 	}
 }

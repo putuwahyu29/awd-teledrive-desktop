@@ -326,6 +326,10 @@ export function ToggleSyncTask(arg1, arg2) {
   return window['go']['main']['App']['ToggleSyncTask'](arg1, arg2);
 }
 
+export function UnmountAllVirtualDrives() {
+  return window['go']['main']['App']['UnmountAllVirtualDrives']();
+}
+
 export function UnmountVirtualDrive(arg1) {
   return window['go']['main']['App']['UnmountVirtualDrive'](arg1);
 }

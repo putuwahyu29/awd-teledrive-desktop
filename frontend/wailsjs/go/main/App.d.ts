@@ -164,6 +164,8 @@ export function ToggleStar(arg1:main.DriveItem):Promise<boolean>;
 
 export function ToggleSyncTask(arg1:string,arg2:boolean):Promise<Record<string, any>>;
 
+export function UnmountAllVirtualDrives():Promise<void>;
+
 export function UnmountVirtualDrive(arg1:string):Promise<void>;
 
 export function UploadFile(arg1:string,arg2:string):Promise<Record<string, any>>;

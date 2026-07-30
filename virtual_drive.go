@@ -809,6 +809,23 @@ func (a *App) StopNativeWebDAVServer() error {
 	return nil
 }
 
+// UnmountAllVirtualDrives unmaps all active mounted virtual drives.
+func (a *App) UnmountAllVirtualDrives() {
+	if a.virtualDriveMgr == nil {
+		return
+	}
+	a.virtualDriveMgr.mu.Lock()
+	var letters []string
+	for letter := range a.virtualDriveMgr.mounts {
+		letters = append(letters, letter)
+	}
+	a.virtualDriveMgr.mu.Unlock()
+
+	for _, letter := range letters {
+		_ = a.UnmountVirtualDrive(letter)
+	}
+}
+
 func findAvailableDriveLetter(preferred string) string {
 	if runtime.GOOS != "windows" {
 		return preferred
@@ -824,8 +841,13 @@ func findAvailableDriveLetter(preferred string) string {
 		return err == nil
 	}
 
-	if preferred != "" && preferred != ":" && !isDriveUsed(preferred) {
-		return preferred
+	// Try clearing any stale network or subst mapping on preferred letter first before declaring it in-use
+	if preferred != "" && preferred != ":" {
+		_ = exec.Command("cmd.exe", "/c", "net use "+preferred+" /delete /y").Run()
+		_ = exec.Command("cmd.exe", "/c", "subst "+preferred+" /d").Run()
+		if !isDriveUsed(preferred) {
+			return preferred
+		}
 	}
 
 	letters := []string{"Z:", "Y:", "X:", "W:", "V:", "U:", "T:", "S:", "R:", "Q:", "P:", "O:", "N:", "M:", "L:", "K:", "J:", "I:", "H:", "G:", "F:", "E:", "D:"}
@@ -843,6 +865,20 @@ func findAvailableDriveLetter(preferred string) string {
 
 // MountVirtualDrive maps Drive letter (Windows) or Volumes (macOS/Linux).
 func (a *App) MountVirtualDrive(chatId string, driveLetter string) (MountedDriveInfo, error) {
+	if !strings.HasSuffix(driveLetter, ":") && runtime.GOOS == "windows" {
+		driveLetter += ":"
+	}
+
+	// If target letter is already registered in our mounts map, unmount it first
+	if a.virtualDriveMgr != nil {
+		a.virtualDriveMgr.mu.Lock()
+		_, exists := a.virtualDriveMgr.mounts[driveLetter]
+		a.virtualDriveMgr.mu.Unlock()
+		if exists {
+			_ = a.UnmountVirtualDrive(driveLetter)
+		}
+	}
+
 	driveLetter = findAvailableDriveLetter(driveLetter)
 
 	if a.virtualDriveMgr != nil {
@@ -918,6 +954,11 @@ func (a *App) UnmountVirtualDrive(driveLetter string) error {
 		driveLetter += ":"
 	}
 
+	port := 8085
+	if a.virtualDriveMgr != nil && a.virtualDriveMgr.webdavPort > 0 {
+		port = a.virtualDriveMgr.webdavPort
+	}
+
 	switch runtime.GOOS {
 	case "windows":
 		_ = exec.Command("cmd.exe", "/c", "net use "+driveLetter+" /delete /y").Run()
@@ -925,7 +966,7 @@ func (a *App) UnmountVirtualDrive(driveLetter string) error {
 	case "darwin":
 		_ = exec.Command("umount", "/Volumes/DavWWWRoot").Run()
 	case "linux":
-		_ = exec.Command("gio", "mount", "-u", "dav://127.0.0.1:8085/").Run()
+		_ = exec.Command("gio", "mount", "-u", fmt.Sprintf("dav://127.0.0.1:%d/", port)).Run()
 	}
 
 	if a.virtualDriveMgr != nil {
