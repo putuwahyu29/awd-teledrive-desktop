@@ -385,6 +385,7 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
   const handleRefresh = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
+    addToast(lang === 'id' ? 'Menyingkronkan data dengan Telegram...' : 'Syncing data with Telegram...');
     try {
       if ((window as any).go?.main?.App?.RefreshFiles) {
         await (window as any).go.main.App.RefreshFiles();
@@ -1158,13 +1159,14 @@ export default function FileManager({ onLogout }: { onLogout: () => void }) {
               )}
               <button
                 onClick={handleRefresh}
+                disabled={isRefreshing}
                 title={lang === 'id' ? 'Sinkronkan / Refresh Data' : 'Sync / Refresh Data'}
                 style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: 'var(--md-on-surface-variant)', marginLeft: 6, transition: 'background .15s',
+                  background: 'transparent', border: 'none', cursor: isRefreshing ? 'not-allowed' : 'pointer', padding: 6, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isRefreshing ? 0.6 : 1,
+                  color: 'var(--md-on-surface-variant)', marginLeft: 6, transition: 'background .15s, opacity .15s',
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
+                onMouseEnter={e => { if (!isRefreshing) e.currentTarget.style.background = 'var(--md-surface-container-high)'; }}
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
               >
                 <RotateCw size={17} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />

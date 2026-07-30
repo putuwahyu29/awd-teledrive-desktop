@@ -284,7 +284,35 @@ func (a *App) getInputPeer(chatIdStr string) tg.InputPeerClass {
 	return &tg.InputPeerEmpty{}
 }
 
+func (a *App) throttleTelegramRequest() {
+	a.telegramReqMu.Lock()
+	defer a.telegramReqMu.Unlock()
+
+	minInterval := 50 * time.Millisecond
+	elapsed := time.Since(a.lastTelegramReq)
+	if elapsed < minInterval {
+		time.Sleep(minInterval - elapsed)
+	}
+	a.lastTelegramReq = time.Now()
+}
+
+func (a *App) getCachedFolderSize(channelID string) int64 {
+	a.folderSizeMu.RLock()
+	defer a.folderSizeMu.RUnlock()
+	if size, ok := a.folderSizeCache[channelID]; ok {
+		return size
+	}
+	return 0
+}
+
 func (a *App) getFolderSize(channelID string) int64 {
+	a.folderSizeMu.RLock()
+	if size, ok := a.folderSizeCache[channelID]; ok {
+		a.folderSizeMu.RUnlock()
+		return size
+	}
+	a.folderSizeMu.RUnlock()
+
 	subFiles := a.GetFiles(channelID)
 	var size int64 = 0
 	for _, sf := range subFiles {
@@ -292,6 +320,14 @@ func (a *App) getFolderSize(channelID string) int64 {
 			size += sf.Size
 		}
 	}
+
+	a.folderSizeMu.Lock()
+	if a.folderSizeCache == nil {
+		a.folderSizeCache = make(map[string]int64)
+	}
+	a.folderSizeCache[channelID] = size
+	a.folderSizeMu.Unlock()
+
 	return size
 }
 
@@ -464,6 +500,7 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 	items := []DriveItem{}
 	
 	if chatIdStr == "" || chatIdStr == "/" || chatIdStr == "0" {
+		a.throttleTelegramRequest()
 		dialogs, err := api.MessagesGetDialogs(a.ctx, &tg.MessagesGetDialogsRequest{
 			OffsetPeer: &tg.InputPeerEmpty{},
 			Limit:      100,
@@ -494,7 +531,7 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 					ID:       fmt.Sprintf("%d", c.ID),
 					Name:     c.Title,
 					Type:     "folder",
-					Size:     a.getFolderSize(fmt.Sprintf("%d", c.ID)),
+					Size:     a.getCachedFolderSize(fmt.Sprintf("%d", c.ID)),
 					MimeType: "folder",
 					Date:     int64(c.Date),
 				})
@@ -516,7 +553,7 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 					ID:       idStr,
 					Name:     cc.Title,
 					Type:     "folder",
-					Size:     a.getFolderSize(idStr),
+					Size:     a.getCachedFolderSize(idStr),
 					MimeType: "folder",
 					Date:     time.Now().Unix(),
 				})
@@ -540,6 +577,7 @@ func (a *App) GetFiles(chatIdStr string) []DriveItem {
 	}
 
 	peer := a.getInputPeer(chatIdStr)
+	a.throttleTelegramRequest()
 	res, err := api.MessagesGetHistory(a.ctx, &tg.MessagesGetHistoryRequest{
 		Peer:  peer,
 		Limit: 100,
@@ -563,6 +601,7 @@ func (a *App) GetFilesPage(chatIdStr string, offsetId int) PageResult {
 	items := []DriveItem{}
 
 	if (chatIdStr == "" || chatIdStr == "/" || chatIdStr == "0") && offsetId == 0 {
+		a.throttleTelegramRequest()
 		dialogs, err := api.MessagesGetDialogs(a.ctx, &tg.MessagesGetDialogsRequest{
 			OffsetPeer: &tg.InputPeerEmpty{},
 			Limit:      100,
@@ -592,7 +631,7 @@ func (a *App) GetFilesPage(chatIdStr string, offsetId int) PageResult {
 					ID:       fmt.Sprintf("%d", c.ID),
 					Name:     c.Title,
 					Type:     "folder",
-					Size:     a.getFolderSize(fmt.Sprintf("%d", c.ID)),
+					Size:     a.getCachedFolderSize(fmt.Sprintf("%d", c.ID)),
 					MimeType: "folder",
 				})
 			}
@@ -600,6 +639,7 @@ func (a *App) GetFilesPage(chatIdStr string, offsetId int) PageResult {
 	}
 
 	peer := a.getInputPeer(chatIdStr)
+	a.throttleTelegramRequest()
 	res, err := api.MessagesGetHistory(a.ctx, &tg.MessagesGetHistoryRequest{
 		Peer:     peer,
 		Limit:    limit,
@@ -1116,10 +1156,10 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 	peer := a.getInputPeer(currentPath)
 	u := uploader.NewUploader(api).WithThreads(4)
 
-	// If file size exceeds 2GB (2,000,000,000 bytes), upload it as split parts
-	if fileSize > 2000000000 {
+	// If file size exceeds 1.9GB (1,900,000,000 bytes), upload it as split parts
+	if fileSize > 1900000000 {
 		groupId := generateSplitGroupId()
-		const chunkSize = 2000000000
+		const chunkSize int64 = 1900000000
 		totalParts := int((fileSize + chunkSize - 1) / chunkSize)
 
 		var accumulated int64 = 0
@@ -1161,6 +1201,7 @@ func (a *App) UploadFile(filePath string, currentPath string) map[string]interfa
 				return map[string]interface{}{"success": false, "error": err.Error()}
 			}
 
+			a.throttleTelegramRequest()
 			resMedia, err := api.MessagesSendMedia(a.ctx, &tg.MessagesSendMediaRequest{
 				Peer:     peer,
 				RandomID: rand.Int63(),
@@ -1769,12 +1810,24 @@ func (a *App) SearchFiles(query string) []DriveItem {
 					}
 					if media, ok := msg.Media.(*tg.MessageMediaDocument); ok {
 						if doc, ok := media.Document.(*tg.Document); ok {
-							name := "document"
-							for _, attr := range doc.Attributes {
-								if filenameAttr, ok := attr.(*tg.DocumentAttributeFilename); ok {
-									name = filenameAttr.FileName
+							meta := parseSplitMetadata(msg.Message)
+							if meta != nil {
+								if meta.PartIndex != 0 {
+									continue
 								}
 							}
+
+							name := "document"
+							if meta != nil && meta.OriginalName != "" {
+								name = meta.OriginalName
+							} else {
+								for _, attr := range doc.Attributes {
+									if filenameAttr, ok := attr.(*tg.DocumentAttributeFilename); ok {
+										name = filenameAttr.FileName
+									}
+								}
+							}
+
 							ext := "file"
 							parts := strings.Split(name, ".")
 							if len(parts) > 1 {
@@ -2977,12 +3030,17 @@ func (a *App) ImportManifest() map[string]interface{} {
 	return map[string]interface{}{"success": true}
 }
 
-// RefreshFiles invalidates local channel caches and re-synces Cloud Manifest from Telegram.
+// RefreshFiles invalidates local channel caches, folder size caches, and re-synces Cloud Manifest from Telegram.
 func (a *App) RefreshFiles() map[string]interface{} {
 	a.cacheMu.Lock()
 	a.channelCache = make(map[int64]*tg.InputPeerChannel)
 	a.cacheMu.Unlock()
 
+	a.folderSizeMu.Lock()
+	a.folderSizeCache = make(map[string]int64)
+	a.folderSizeMu.Unlock()
+
+	a.throttleTelegramRequest()
 	_ = a.loadCloudManifest()
 	return map[string]interface{}{"success": true}
 }

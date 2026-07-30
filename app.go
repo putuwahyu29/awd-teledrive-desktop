@@ -41,15 +41,21 @@ type App struct {
 	manifestCache *TeleDriveManifest
 	manifestMu    sync.RWMutex
 
+	folderSizeCache map[string]int64
+	folderSizeMu    sync.RWMutex
+
+	lastTelegramReq time.Time
+	telegramReqMu   sync.Mutex
+
 	sessionPath    string
 	configPath     string
 	authPhone      string
 	authHash       string
 	minimizeToTray bool
 
-	dispatcher *tg.UpdateDispatcher
-	qrCancel   context.CancelFunc
-	qrMu       sync.Mutex
+	dispatcher      *tg.UpdateDispatcher
+	qrCancel        context.CancelFunc
+	qrMu            sync.Mutex
 	webServer       *WebServer
 	virtualDriveMgr *NativeVirtualDriveManager
 	quitting        bool
@@ -60,9 +66,10 @@ type App struct {
 func NewApp() *App {
 	disp := tg.NewUpdateDispatcher()
 	app := &App{
-		connectedCh:  make(chan struct{}),
-		channelCache: make(map[int64]*tg.InputPeerChannel),
-		dispatcher:   &disp,
+		connectedCh:     make(chan struct{}),
+		channelCache:    make(map[int64]*tg.InputPeerChannel),
+		folderSizeCache: make(map[string]int64),
+		dispatcher:      &disp,
 	}
 	app.virtualDriveMgr = NewNativeVirtualDriveManager(app)
 	return app

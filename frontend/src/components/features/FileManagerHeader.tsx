@@ -258,11 +258,12 @@ export default function FileManagerHeader({
             ...(onRefresh ? [{ 
               icon: <RotateCw size={19} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : {}} />, 
               action: onRefresh, 
+              disabled: !!isRefreshing,
               title: lang === 'id' ? 'Sinkronkan / Refresh Data' : 'Sync / Refresh Data' 
             }] : []),
-            ...(showLayoutToggle ? [{ icon: viewMode === 'grid' ? <List size={20}/> : <LayoutGrid size={20}/>, action: () => setViewMode(v => v === 'grid' ? 'list' : 'grid'), title: viewMode === 'grid' ? 'List View' : 'Grid View' }] : []),
-            { icon: dark ? <Sun size={20}/> : <Moon size={20}/>, action: () => setDark(d => !d), title: dark ? 'Light Mode' : 'Dark Mode' },
-            { icon: <SettingsIcon size={20}/>, action: () => navTo('settings'), title: t.settings },
+            ...(showLayoutToggle ? [{ icon: viewMode === 'grid' ? <List size={20}/> : <LayoutGrid size={20}/>, action: () => setViewMode(v => v === 'grid' ? 'list' : 'grid'), disabled: false, title: viewMode === 'grid' ? 'List View' : 'Grid View' }] : []),
+            { icon: dark ? <Sun size={20}/> : <Moon size={20}/>, action: () => setDark(d => !d), disabled: false, title: dark ? 'Light Mode' : 'Dark Mode' },
+            { icon: <SettingsIcon size={20}/>, action: () => navTo('settings'), disabled: false, title: t.settings },
             {
               icon: <LogOut size={20}/>,
               action: () => showConfirm(
@@ -275,20 +276,23 @@ export default function FileManagerHeader({
                   onLogout();
                 },
                 true
-              )
+              ),
+              disabled: false
             },
           ];
           return headerButtons.map((btn, i) => (
             <button 
               key={i} 
               onClick={btn.action} 
+              disabled={btn.disabled}
               title={(btn as any).title}
               style={{
-                width: 40, height: 40, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                width: 40, height: 40, borderRadius: '50%', border: 'none', cursor: btn.disabled ? 'not-allowed' : 'pointer',
+                opacity: btn.disabled ? 0.6 : 1,
                 background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 color: 'var(--md-on-surface-variant)', transition: 'background .15s',
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--md-surface-container-high)'}
+              onMouseEnter={e => { if (!btn.disabled) e.currentTarget.style.background = 'var(--md-surface-container-high)'; }}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               {btn.icon}
