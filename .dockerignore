@@ -1,0 +1,9 @@
+.git
+.github
+.idea
+.vscode
+build/bin
+frontend/node_modules
+frontend/dist
+teledrive.exe
+*.log

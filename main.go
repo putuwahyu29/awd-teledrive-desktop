@@ -2,12 +2,15 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/wailsapp/wails/v2"
@@ -82,11 +85,49 @@ func (h *LocalFileHandler) ServeHTTP(res http.ResponseWriter, req *http.Request)
 }
 
 func main() {
-	logFile, _ := os.OpenFile(filepath.Join(os.TempDir(), "teledrive.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-	os.Stdout = logFile
-	os.Stderr = logFile
+	serverFlag := flag.Bool("server", false, "Run in Headless Web Server mode without GUI")
+	portFlag := flag.Int("port", 8080, "Port for Headless Web Server")
+	hostFlag := flag.String("host", "0.0.0.0", "Host/IP to bind Headless Web Server")
+	apiKeyFlag := flag.String("api-key", "", "API key for authenticating HTTP requests in server mode")
+	versionFlag := flag.Bool("version", false, "Show version information")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("Awd TeleDrive v%s (Dual-Mode: Desktop GUI & Headless Web Server)\n", AppVersion)
+		os.Exit(0)
+	}
+
+	serverMode := *serverFlag || os.Getenv("SERVER_MODE") == "true" || os.Getenv("SERVER_MODE") == "1"
+	port := *portFlag
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if p, err := strconv.Atoi(envPort); err == nil {
+			port = p
+		}
+	}
+	host := *hostFlag
+	if envHost := os.Getenv("HOST"); envHost != "" {
+		host = envHost
+	}
+	apiKey := *apiKeyFlag
+	if envKey := os.Getenv("API_KEY"); envKey != "" {
+		apiKey = envKey
+	}
+
+	if !serverMode {
+		logFile, _ := os.OpenFile(filepath.Join(os.TempDir(), "teledrive.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		os.Stdout = logFile
+		os.Stderr = logFile
+	}
 
 	app := NewApp()
+
+	if serverMode {
+		hs := NewHeadlessServer(app, host, port, apiKey)
+		if err := hs.Start(); err != nil {
+			log.Fatalf("Headless server failed: %v", err)
+		}
+		return
+	}
 
 	err := wails.Run(&options.App{
 		Title:            "Awd TeleDrive",
@@ -103,8 +144,8 @@ func main() {
 		OnShutdown:       app.shutdown,
 		OnBeforeClose:    app.BeforeClose,
 		DragAndDrop: &options.DragAndDrop{
-			EnableFileDrop:       true,
-			DisableWebViewDrop:   true,
+			EnableFileDrop:     true,
+			DisableWebViewDrop: true,
 		},
 		Bind: []interface{}{
 			app,

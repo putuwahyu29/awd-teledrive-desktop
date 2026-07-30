@@ -155,6 +155,9 @@ var trayNID NOTIFYICONDATA // keep globally so we can delete on exit
 
 
 func (a *App) startTray() {
+	if a.isHeadless {
+		return
+	}
 	go a.runTrayLoop()
 }
 

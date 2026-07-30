@@ -53,6 +53,8 @@ type App struct {
 	webServer       *WebServer
 	virtualDriveMgr *NativeVirtualDriveManager
 	quitting        bool
+	isHeadless      bool
+	headlessPort    int
 }
 
 func NewApp() *App {
@@ -227,9 +229,23 @@ func (a *App) CheckForUpdates() (VersionCheckResult, error) {
 }
 
 func (a *App) OpenReleaseURL(url string) {
+	if a.isHeadless || a.ctx == nil {
+		return
+	}
+	defer func() { _ = recover() }()
 	runtime.BrowserOpenURL(a.ctx, url)
 }
 
 func (a *App) GetAppVersion() string {
 	return AppVersion
+}
+
+func (a *App) emitEvent(eventName string, data ...interface{}) {
+	if a == nil || a.isHeadless || a.ctx == nil {
+		return
+	}
+	defer func() {
+		_ = recover()
+	}()
+	runtime.EventsEmit(a.ctx, eventName, data...)
 }

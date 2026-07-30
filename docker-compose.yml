@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  teledrive-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/putuwahyu29/awd-teledrive-server:latest
+    container_name: awd-teledrive-server
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_MODE=true
+      - PORT=8080
+      - HOST=0.0.0.0
+      # - API_KEY=your_secret_key_here  # Optional: Uncomment to protect server with API Key
+    volumes:
+      - teledrive_data:/root/.config/teledrive
+
+volumes:
+  teledrive_data:
+    driver: local

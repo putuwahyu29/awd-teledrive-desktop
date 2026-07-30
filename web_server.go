@@ -16,8 +16,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed icon.webp
@@ -217,11 +215,11 @@ func (ws *WebServer) StartTunnel() (string, error) {
 	cfPath := filepath.Join(binDir, exeName)
 
 	if _, err := os.Stat(cfPath); os.IsNotExist(err) {
-		runtime.EventsEmit(ws.App.ctx, "tunnel:status", "downloading")
+		ws.App.emitEvent("tunnel:status", "downloading")
 		// Download cloudflared for the current platform
 		err = ws.downloadCloudflared(cfPath, downloadURL)
 		if err != nil {
-			runtime.EventsEmit(ws.App.ctx, "tunnel:status", "failed")
+			ws.App.emitEvent("tunnel:status", "failed")
 			return "", fmt.Errorf("failed to download cloudflared: %v", err)
 		}
 		// Make the binary executable on Unix systems
@@ -230,7 +228,7 @@ func (ws *WebServer) StartTunnel() (string, error) {
 		}
 	}
 
-	runtime.EventsEmit(ws.App.ctx, "tunnel:status", "connecting")
+	ws.App.emitEvent("tunnel:status", "connecting")
 
 	// Launch Cloudflare Tunnel
 	cmd := exec.Command(cfPath, "tunnel", "--url", fmt.Sprintf("http://localhost:%d", ws.Port))
@@ -243,7 +241,7 @@ func (ws *WebServer) StartTunnel() (string, error) {
 	}
 
 	if err := cmd.Start(); err != nil {
-		runtime.EventsEmit(ws.App.ctx, "tunnel:status", "failed")
+		ws.App.emitEvent("tunnel:status", "failed")
 		return "", err
 	}
 
@@ -287,15 +285,15 @@ func (ws *WebServer) StartTunnel() (string, error) {
 		ws.Mu.Lock()
 		ws.PublicUrl = url
 		ws.Mu.Unlock()
-		runtime.EventsEmit(ws.App.ctx, "tunnel:status", "connected")
+		ws.App.emitEvent("tunnel:status", "connected")
 		return url, nil
 	case err := <-errChan:
 		ws.StopTunnel()
-		runtime.EventsEmit(ws.App.ctx, "tunnel:status", "failed")
+		ws.App.emitEvent("tunnel:status", "failed")
 		return "", err
 	case <-time.After(30 * time.Second):
 		ws.StopTunnel()
-		runtime.EventsEmit(ws.App.ctx, "tunnel:status", "timeout")
+		ws.App.emitEvent("tunnel:status", "timeout")
 		return "", fmt.Errorf("tunnel initialization timeout")
 	}
 }
@@ -309,7 +307,7 @@ func (ws *WebServer) StopTunnel() {
 	ws.PublicUrl = ""
 	ws.Tunneling = false
 	ws.Mu.Unlock()
-	runtime.EventsEmit(ws.App.ctx, "tunnel:status", "disconnected")
+	ws.App.emitEvent("tunnel:status", "disconnected")
 }
 
 func (ws *WebServer) downloadCloudflared(dest string, url string) error {

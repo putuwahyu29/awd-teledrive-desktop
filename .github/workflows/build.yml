@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build:
@@ -66,16 +67,22 @@ jobs:
         run: |
           choco install nsis upx -y
           echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+          echo "C:\Program Files\NSIS" >> $GITHUB_PATH
+          echo "C:\tools\nsis" >> $GITHUB_PATH
         shell: bash
 
       - name: Build Application
         run: |
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             wails build -platform ${{ matrix.platform }} -nsis -upx -clean
+            # Build Headless Server binary for Windows
+            go build -ldflags="-s -w" -o build/bin/teledrive-server.exe .
           elif [ "${{ matrix.os }}" = "macos-latest" ]; then
             wails build -platform ${{ matrix.platform }} -clean
           else
             wails build -platform ${{ matrix.platform }} -upx -clean
+            # Build Headless Server binary for Linux
+            go build -ldflags="-s -w" -o build/bin/teledrive-server .
           fi
         shell: bash
 
@@ -103,28 +110,44 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: awd-teledrive-*
           path: artifacts
 
       - name: Restructure and Rename Artifacts
         run: |
           mkdir release-dist
           VERSION="${{ github.ref_name }}"
-          # Strip 'v' prefix if present for a cleaner filename, e.g. v1.1.0 -> 1.1.0
+          # Strip 'v' prefix if present for a cleaner filename, e.g. v1.2.0 -> 1.2.0
           VERSION_CLEAN="${VERSION#v}"
           
-          # Linux
-          if [ -f "artifacts/awd-teledrive-linux/awd-teledrive" ]; then
+          # Linux Desktop GUI
+          if [ -f "artifacts/awd-teledrive-linux/Awd-TeleDrive" ]; then
+            cp "artifacts/awd-teledrive-linux/Awd-TeleDrive" "release-dist/awd-teledrive-${VERSION_CLEAN}-linux-amd64"
+          elif [ -f "artifacts/awd-teledrive-linux/awd-teledrive" ]; then
             cp "artifacts/awd-teledrive-linux/awd-teledrive" "release-dist/awd-teledrive-${VERSION_CLEAN}-linux-amd64"
           fi
+
+          # Linux Headless Server Binary
+          if [ -f "artifacts/awd-teledrive-linux/teledrive-server" ]; then
+            cp "artifacts/awd-teledrive-linux/teledrive-server" "release-dist/awd-teledrive-server-${VERSION_CLEAN}-linux-amd64"
+          fi
           
-          # Windows Executable
-          if [ -f "artifacts/awd-teledrive-windows/awd-teledrive.exe" ]; then
+          # Windows Desktop GUI Executable
+          if [ -f "artifacts/awd-teledrive-windows/Awd-TeleDrive.exe" ]; then
+            cp "artifacts/awd-teledrive-windows/Awd-TeleDrive.exe" "release-dist/awd-teledrive-${VERSION_CLEAN}-windows-amd64.exe"
+          elif [ -f "artifacts/awd-teledrive-windows/awd-teledrive.exe" ]; then
             cp "artifacts/awd-teledrive-windows/awd-teledrive.exe" "release-dist/awd-teledrive-${VERSION_CLEAN}-windows-amd64.exe"
+          fi
+
+          # Windows Headless Server Binary
+          if [ -f "artifacts/awd-teledrive-windows/teledrive-server.exe" ]; then
+            cp "artifacts/awd-teledrive-windows/teledrive-server.exe" "release-dist/awd-teledrive-server-${VERSION_CLEAN}-windows-amd64.exe"
           fi
           
           # Windows Installer
-          if [ -f "artifacts/awd-teledrive-windows/awd-teledrive-amd64-installer.exe" ]; then
-            cp "artifacts/awd-teledrive-windows/awd-teledrive-amd64-installer.exe" "release-dist/awd-teledrive-${VERSION_CLEAN}-windows-amd64-installer.exe"
+          INSTALLER_FILE=$(find artifacts/awd-teledrive-windows -maxdepth 1 -name "*installer.exe" 2>/dev/null | head -n 1)
+          if [ -n "$INSTALLER_FILE" ]; then
+            cp "$INSTALLER_FILE" "release-dist/awd-teledrive-${VERSION_CLEAN}-windows-amd64-installer.exe"
           fi
           
           # macOS
@@ -143,3 +166,46 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/awd-teledrive-server
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
